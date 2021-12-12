@@ -18,7 +18,7 @@ class VCA(var in: SiGen, var vol: SiGen) extends SiGen {
     vol.getValue(sid) * in.getValue(sid)
   }
 
-class ConstantValue(value: Float) extends SiGen {
+class ConstantValue(var value: Float) extends SiGen {
   def getValue(sid:Int): Float = value
 
   }
