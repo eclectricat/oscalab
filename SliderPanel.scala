@@ -22,8 +22,7 @@ class SliderPanel(params:List[ParamInfo]) {
 
   def show() = {
     val f:JFrame = new JFrame("AdjustableParameters");
-    //frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    //SliderDemo animator = new SliderDemo();
+
     val panel = new JPanel()
     panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 
@@ -40,18 +39,10 @@ class SliderPanel(params:List[ParamInfo]) {
       slider.addChangeListener(new SliderChangeListener(param))
     }
 
-
-    //framesPerSecond.addChangeListener(this);
-
-    //Add content to the window.
-    //frame.add(animator, BorderLayout.CENTER);
-
     //Display the window.
     f.pack();
     f.setVisible(true);
     frame = Some(f)
-    //animator.startAnimation();
-    //return f
   }
 
   def close() = {frame.map(_.setVisible(false))}
