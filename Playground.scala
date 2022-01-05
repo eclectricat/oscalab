@@ -22,4 +22,23 @@ object Playground {
     val eng = new SoundEngine(filter)
     return eng
   }
+
+  def panTest:SoundEngine = {
+    val osc = new SawOsc(440, 0.9f)
+    val pan = new PanBalance(osc, -1f)
+    val eng = new SoundEngine(pan)
+    return eng
+  }
+
+  def foldingTest: SoundEngine = {
+    val scale = new ConstantValue(1f)
+    val pScale = new ParamInfo("Folding Scala, 1:4", 1, 4,  scale)
+
+    val panel = new SliderPanel(List(pScale))
+    panel.show
+    val fold = new WaveFolder(new SawOsc(150, 0.99f), scale, 2)
+    //val fold = new WaveFolder(new SinOsc(150), scale, 4)
+    val eng = new SoundEngine(fold)
+    eng
+  }
 }
