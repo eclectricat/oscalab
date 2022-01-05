@@ -31,11 +31,11 @@ class SoundEngine(var source: SiGen) {
 
   def run() {
 
-    val format = new AudioFormat(44100.0f, 16, 1, true, true)
+    val format = new AudioFormat(44100.0f, 16, 2, true, true)
 
     val dataLineInfo:DataLine.Info  = new DataLine.Info(classOf[SourceDataLine], format);
     var sourceDataLine = AudioSystem.getLine(dataLineInfo).asInstanceOf[SourceDataLine];
-    sourceDataLine.open(format, 1024);
+    sourceDataLine.open(format, 2048);
     sourceDataLine.start();
 
     System.out.println("sourceDataLine buffer size:" + sourceDataLine.getBufferSize())
@@ -48,24 +48,30 @@ class SoundEngine(var source: SiGen) {
     var sidCounter:Int = 0 // sample counter
 
     while(running) {
-      for (i<-0 until bufferSize/2) {
-        var value = source.getValue(sidCounter)
+      for (i<-0 until bufferSize/4) {
+        var valueL = source.getValue(sidCounter, 0)
+        var valueR = source.getValue(sidCounter, 1)
         //if (i==0) System.out.println("Sample before conversion:" + value)
         sidCounter += 1
 
-        // convert to byte 8 bit
+        // convert to byte, in 8 bit format
         //value = value * 128
         //tempBuffer(i) = value.toByte
         //if (i==0) System.out.println("Sample:" + value.toByte)
 
-        // convert to bytes 16 bit
-        value = 0.1f * value // reduce volume by factor 10 (each osc goes to +-1, but when we sum them we could go higher)
-        val valueInt = min(max((value * 32768),-32768), 32767).toInt // clipping
-        tempBuffer(i*2)= (valueInt >> 8).toByte
-        tempBuffer(i*2+1)= (valueInt).toByte
+        // convert to bytes, in 16 bit format
+        valueL = 0.1f * valueL // reduce volume by factor 10 (each osc goes to +-1, but when we sum them we could go higher)
+        valueR = 0.1f * valueR // reduce volume by factor 10 (each osc goes to +-1, but when we sum them we could go higher)
+        val valueIntL = min(max((valueL * 32768),-32768), 32767).toInt // clipping
+        val valueIntR = min(max((valueR * 32768),-32768), 32767).toInt // clipping
+
+        tempBuffer(i*4)= (valueIntL >> 8).toByte
+        tempBuffer(i*4+1)=  (valueIntL).toByte
+        tempBuffer(i*4+2)=  (valueIntR >> 8).toByte
+        tempBuffer(i*4+3)= (valueIntR).toByte
 
       }
-      sourceDataLine.write(tempBuffer, 0, 1000);
+      sourceDataLine.write(tempBuffer, 0, bufferSize);
     }
 
     sourceDataLine.drain();
@@ -76,5 +82,5 @@ class SoundEngine(var source: SiGen) {
   def stop() {
     running = false
   }
-  
+
 }
