@@ -1,9 +1,9 @@
-class SawOsc(var freq: SiGen = new ConstantValue(440), middlePos: Float) extends SiGen {
+class SawOsc(var freq: SiGen = new ConstantValue(440), middlePos: Float) extends CachedSiGen {
 
   var relativePosition: Float = 0f
 
-  def getValue(sid: Int): Float = {
-    var sampleRate = 44100
+  def calculateNext(sid: Int): Float = {
+    var sampleRate = GlobalConfig.sampleRate
 
     // calculate current phase based on global time
     //var relativePosition = (sid*freq.getValue(sid) / sampleRate) % 1

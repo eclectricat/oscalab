@@ -1,10 +1,10 @@
-class Digital2Pole(input: SiGen, cutoff: SiGen, reso: SiGen) extends SiGen {
+class Digital2Pole(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiGen {
 
   var v0=0f
   var v1=0f
   val eps = 0.01f
 
-  def getValue(sid: Int):Float = {
+  def calculateNext(sid: Int):Float = {
 
           val cut =  cutoff.getValue(sid)
           val in = input.getValue(sid)

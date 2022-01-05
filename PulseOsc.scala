@@ -6,7 +6,7 @@ class PulseOscOld(var freq: Int = 440) extends SiGen {
     var relativePosition = (sid*freq.toFloat / sampleRate) % 1
 
     val cornerpoints = List(0.1f, 0.5f, 0.6f)
-    val result = 
+    val result =
     if (relativePosition < cornerpoints(0))
          relativePosition * (1/cornerpoints(0))
     else if  (relativePosition < cornerpoints(1))
@@ -14,19 +14,19 @@ class PulseOscOld(var freq: Int = 440) extends SiGen {
     else if  (relativePosition < cornerpoints(2)) {
       val slopewidth = (cornerpoints(2)-cornerpoints(1))
       (slopewidth - (relativePosition - cornerpoints(1))) * (1/slopewidth)
-    } 
+    }
     else 0
 
     2 * result - 1
   }
-  
+
 }
 
-class PulseOsc(var freq: SiGen = new ConstantValue(440)) extends SiGen {
+class PulseOsc(var freq: SiGen = new ConstantValue(440)) extends CachedSiGen {
 
   var relativePosition: Float = 0f
 
-  def getValue(sid: Int): Float = {
+  def calculateNext(sid: Int): Float = {
     var sampleRate = 44100
 
     // calculate current phase based on global time
@@ -41,7 +41,7 @@ class PulseOsc(var freq: SiGen = new ConstantValue(440)) extends SiGen {
     val timestep = freq.getValue(sid)/sampleRate
 
     val cornerpoints = List(0.01f, 0.5f, 0.51f)
-    val result = 
+    val result =
     if (relativePosition < cornerpoints(0))
          relativePosition * (1/cornerpoints(0))
     else if  (relativePosition < cornerpoints(1))
@@ -49,7 +49,7 @@ class PulseOsc(var freq: SiGen = new ConstantValue(440)) extends SiGen {
     else if  (relativePosition < cornerpoints(2)) {
       val slopewidth = (cornerpoints(2)-cornerpoints(1))
       (slopewidth - (relativePosition - cornerpoints(1))) * (1/slopewidth)
-    } 
+    }
     else 0
 
     relativePosition += timestep
@@ -57,5 +57,5 @@ class PulseOsc(var freq: SiGen = new ConstantValue(440)) extends SiGen {
 
     2 * result - 1
   }
-  
+
 }

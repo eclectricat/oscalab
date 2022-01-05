@@ -14,6 +14,29 @@ trait SiGen {
 
 }
 
+/**
+SiGen with some functionality to avoid that the same sample is calculated multiple times
+This is for modules with an internal state (related to time). Otherwise, asking for the sample twice would result in twice the fewquency for an osc e.g.
+This also helps to save processing cost - don't propagate calls along the graph if the value has been calculated before
+Note: for now this is only Mono
+**/
+trait CachedSiGen extends SiGen {
+
+  var latestSid: Int = -1
+  var latestValue: Float = 0f
+
+  override def getValue(sid: Int) = {
+    if (sid > latestSid) {
+      latestValue = calculateNext(sid)
+      latestSid = sid
+    }
+    latestValue
+  }
+
+  def calculateNext(sid: Int): Float
+
+}
+
 class Mixer(var sources: List[SiGen]) extends SiGen {
 
   def getValue(sid:Int): Float = { //System.out.println(sources)

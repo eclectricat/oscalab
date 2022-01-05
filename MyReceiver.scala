@@ -6,6 +6,7 @@ import javax.sound.midi._
 import MyImplicits._
 
 class MyReceiver() extends Receiver {
+  MidiSystem.getMidiDeviceInfo().map(a => System.out.println("MIDI info:" +  a + "//" + MidiSystem.getMidiDevice(a).getClass().getSimpleName()))
   val device = MidiSystem.getMidiDeviceInfo().map(MidiSystem.getMidiDevice(_)).find(_.getClass().getSimpleName()=="MidiInDevice").get
 
   val trans = device.getTransmitter()
@@ -23,7 +24,14 @@ class MyReceiver() extends Receiver {
 
 }
 
-class Synth1 extends MyReceiver with EnvCallbackDestination {
+
+/**
+Other polysynths can be implemented by overriding newVoice():
+newVoice() needs to return the SiGen and the envelopes that need to be released on key released
+newVoice() needs to setup the call back (into 'this' with the note as id) for the voice to be removed when the env is done
+*/
+
+class PolySynth extends MyReceiver with EnvCallbackDestination {
 
   var activeNotes = Map[Int, (SiGen, List[Env])]()
 
@@ -95,28 +103,30 @@ class Synth1 extends MyReceiver with EnvCallbackDestination {
           return (totalSound, List(env, filterEnv))
         }
 
-        def newVoice(note: Int):Tuple2[SiGen, List[Env]] = {
-          // 2(m−69)/12(440 Hz)
-          val freq =  (440f * math.pow(2, (note-69)/12f)).toFloat
 
-          val sound1 = new SawOsc(freq, 0.95f) //* 0.99f
-
-          val freqMod = new SinOsc(1) *  (freq * 0.005f)
-          val totalFreq = freqMod + (freq + freq*0.01f)
-          val sound2 = new SawOsc(totalFreq, 0.95f) //* 0.99f
-
-          var totalSound: SiGen = sound1 + sound2
-          val env = new Env(0.1f, 0.5f, 1f, 0.7f, Some(this), note)
-          val filterEnv = new Env(0.2f, 1f, 0.3f, 1.5f, None, note)
-          totalSound = new Digital2Pole(totalSound, filterEnv * 0.3f, 1.7f)
-          totalSound = totalSound *  env
-
-          return (totalSound, List(env, filterEnv))
-        }
       }
 
       case _ => None
     }
+  }
+
+  def newVoice(note: Int):Tuple2[SiGen, List[Env]] = {
+    // 2(m−69)/12(440 Hz)
+    val freq =  (440f * math.pow(2, (note-69)/12f)).toFloat
+
+    val sound1 = new SawOsc(freq, 0.95f) //* 0.99f
+
+    val freqMod = new SinOsc(1) *  (freq * 0.005f)
+    val totalFreq = freqMod + (freq + freq*0.01f)
+    val sound2 = new SawOsc(totalFreq, 0.95f) //* 0.99f
+
+    var totalSound: SiGen = sound1 + sound2
+    val env = new Env(0.1f, 0.5f, 1f, 0.7f, Some(this), note)
+    val filterEnv = new Env(0.2f, 1f, 0.3f, 1.5f, None, note)
+    totalSound = new Digital2Pole(totalSound, filterEnv * 0.3f, 0.6f)
+    totalSound = totalSound *  env
+
+    return (totalSound, List(env, filterEnv))
   }
 
   override def envelopeDone(callbackIdentifier: Int) = {

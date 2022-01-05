@@ -1,8 +1,8 @@
-class SinOsc(var freq: SiGen = new ConstantValue(440)) extends SiGen {
+class SinOsc(var freq: SiGen = new ConstantValue(440)) extends CachedSiGen {
 
   var relativePosition: Float = 0f
 
-  def getValue(sid: Int): Float = {
+  def calculateNext(sid: Int): Float = {
     var sampleRate = 44100
     //var time:Float = sid.toFloat/sampleRate
     //return math.sin(time * math.Pi * freq.getValue(sid)).toFloat
