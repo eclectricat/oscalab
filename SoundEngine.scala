@@ -22,6 +22,9 @@ class SoundEngine(var source: SiGen) {
 
   var running=false
 
+  // sample counter, needs to continue at same position when soundengine is stopped and restarted
+  var sidCounter:Int = 0
+
   def start() {
 
     running = true
@@ -45,7 +48,7 @@ class SoundEngine(var source: SiGen) {
     val bufferSize = 1000
     //byte tempBuffer[] = new byte[1000];
     val tempBuffer = new Array[Byte](bufferSize)
-    var sidCounter:Int = 0 // sample counter
+
 
     while(running) {
       for (i<-0 until bufferSize/4) {
@@ -57,7 +60,7 @@ class SoundEngine(var source: SiGen) {
         // convert to byte, in 8 bit format
         //value = value * 128
         //tempBuffer(i) = value.toByte
-        //if (i==0) System.out.println("Sample:" + value.toByte)
+        //if (i==0) System.out.println("Sample:" + valueL)
 
         // convert to bytes, in 16 bit format
         valueL = 0.1f * valueL // reduce volume by factor 10 (each osc goes to +-1, but when we sum them we could go higher)
