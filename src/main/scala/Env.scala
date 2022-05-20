@@ -1,4 +1,4 @@
-class Env(atk: Float, dec: Float, sus:Float, rel: Float, var voiceController: Option[EnvCallbackDestination], var callbackIdentifier: Int) extends SiGen {
+class Env(var atk: Float, var dec: Float, var sus:Float, var rel: Float, var voiceController: Option[EnvCallbackDestination], var callbackIdentifier: Int) extends SiGen {
 
   var state = 1
   // 0: not started

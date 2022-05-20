@@ -9,7 +9,7 @@ class MonoSynth(deviceId:String = "") extends MyReceiver(deviceId) with Standard
 
   val freq = new ConstantValue(100f)
   val r = scala.util.Random
-  var (sound,envs)  = newVoice(freq)
+  var (sound,envs)  = newVoice(new Portamento(freq, 1 + 0.6f/40000, noiseAmount = 0f))
   envs.map(_.state=0)
 
   var lastPressedNote = -1
@@ -40,7 +40,12 @@ class MonoSynth(deviceId:String = "") extends MyReceiver(deviceId) with Standard
             val f =  (440f * math.pow(2, ((note)-69)/12f)).toFloat
             freq.value = f
 
-            envs.map(_.retrigger())
+            envs.map { e =>
+              e.atk = attack.value
+              e.rel = release.value
+              e.dec = release.value
+              e.retrigger()
+            }
 
           }
 
