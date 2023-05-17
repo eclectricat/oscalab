@@ -18,7 +18,8 @@ object Playground {
 
     //val osc = new SawOsc(110, 0.99f) + (saw2scale * new SawOsc(110 + detune, 0.99f))
     val osc = new SawOscB(110) + (saw2scale * new SawOsc(110 + detune, 0.99f))
-    val filter = new Digital2Pole(osc, cutoff, reso)
+    //val filter = new Digital2Pole(osc, cutoff, reso)
+    val filter = new Digital4PoleZDF(osc, cutoff, reso)
 
     val eng = new SoundEngine(filter)
     return eng
@@ -53,7 +54,7 @@ object Playground {
   def panTest:SoundEngine = {
     val osc = new SawOsc(440, 0.9f)
     val pan = new PanBalance(osc, -1f)
-    val eng = new SoundEngine(pan)
+    val eng = new SoundEngine(new Mixer(List(pan))) // to test of mixer also supports stereo
     return eng
   }
 
@@ -141,18 +142,32 @@ object Playground {
     val pFreq = new ParamInfo("freq", 1000 , 10000,  freq)
 
     val o1 = new ConstantValue(1f)
-    val pO1 = new ParamInfo("o1 vol", 0 , 1,  o1)
+    val pO1 = new ParamInfo("saw with tamed downslope vol", 0 , 1,  o1)
 
     val o2 = new ConstantValue(1f)
-    val pO2 = new ParamInfo("o2 vol", 0 , 1,  o2)
+    val pO2 = new ParamInfo("saw blepped", 0 , 1,  o2)
 
     val o3 = new ConstantValue(1f)
-    val pO3 = new ParamInfo("o3 vol", 0 , 1,  o3)
+    val pO3 = new ParamInfo("saw with blep off", 0 , 1,  o3)
 
-    val panel = new SliderPanel(List(pFreq, pO1, pO2, pO3))
+    val o4 = new ConstantValue(1f)
+    val pO4 = new ParamInfo("square with tamed slope", 0 , 1,  o4)
+
+    val o5 = new ConstantValue(1f)
+    val pO5 = new ParamInfo("square with blep", 0 , 1,  o5)
+
+    val o6 = new ConstantValue(1f)
+    val pO6 = new ParamInfo("square with blep off", 0 , 1,  o6)
+
+    val panel = new SliderPanel(List(pFreq, pO1, pO2, pO3, pO4, pO5, pO6))
     panel.show
 
-    val eng = new SoundEngine(new SawOsc(freq, 0.90f) * o1 + new SawOscB(freq) * o2 + new SawOscB(freq, blep=false) * o3 )
+    val eng = new SoundEngine(new SawOsc(freq, 0.90f) * o1
+    + new SawOscB(freq) * o2
+    + new SawOscB(freq, blep=false) * o3
+    + new PulseOsc(freq) * o4
+    + new PulseOscB(freq) * o5
+    + new PulseOscB(freq, blep=false) * o6)
     eng
 
   }
@@ -193,5 +208,38 @@ object Playground {
 
   }
 
+  def filterTest:SoundEngine = {
+    val cutoff = new ConstantValue(0.1f)
+    val reso = new ConstantValue(0.5f)
+    val detune = new ConstantValue(1.01f)
+    val saw2scale = new ConstantValue(0f)
+    val gain = new ConstantValue(1f)
+
+    val pCut = new ParamInfo("Cutoff", 0, 1, cutoff)
+    val pReso = new ParamInfo("Res", 0, 1, reso)
+    val pDetune = new ParamInfo("Detune", 0.9f, 1.1f, detune)
+    val pSaw2Scale = new ParamInfo("Saw 2 scale, -1:1", -1, 1,  saw2scale)
+    val pGain = new ParamInfo("Gain, 0-2", 0, 2,  gain)
+
+    val panel = new SliderPanel(List(pCut, pReso, pDetune, pSaw2Scale, pGain))
+    panel.show
+
+    //val osc = new SawOsc(110, 0.99f) + (saw2scale * new SawOsc(110 + detune, 0.99f))
+    val osc = new SawOscB(110) + (saw2scale * new SawOscB(110 * detune))
+    //val filter = new Digital2Pole(gain * osc, cutoff, reso)
+    //val filter = new Chamberlin(gain * osc, cutoff, reso)
+    //val filter = new Mystran(gain * osc, cutoff, reso)
+    //val filter = new Digital4PoleZDF(gain * osc, cutoff, reso)
+    //val filter = new SimperSVF(gain * osc, cutoff, reso)
+    //val filter = new SKF_OM_noFB(gain * osc, cutoff, reso)
+    //val filter = new SKF_OM_FB(gain * osc, cutoff, reso)
+    //val filter = new SKF_OM(gain * osc, cutoff, reso)
+    val filter = new SKF_OM_Diodes(gain * osc, cutoff, reso)
+
+
+
+    val eng = new SoundEngine(filter)
+    return eng
+  }
 
 }

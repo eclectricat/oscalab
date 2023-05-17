@@ -13,7 +13,7 @@ class ADSRMacro(envName: String) {
   val pSustain = new ParamInfo(envName+ "-sustain", 0, 1, sustain)
   val pDecay = new ParamInfo(envName + "-decay", 0, 3, decay)
 
-  def env() = new Env(attack.getValue(0), decay.getValue(0), sustain.getValue(0), release.getValue(0), None, 0)
+  def env() = new LinEnv(attack.getValue(0), decay.getValue(0), sustain.getValue(0), release.getValue(0), None, 0)
 
   val params = List(pAttack, pDecay, pSustain, pRelease)
 }

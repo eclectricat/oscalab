@@ -49,8 +49,8 @@ class PureSynth extends PolySynth {
     //val sound2 = new SawOsc(totalFreq, 0.99f) //* 0.99f
 
     var totalSound: SiGen = sound1 //+ sound2 // * -1
-    val env = new Env(0.1f, 0.5f, 1f, 0.7f, Some(this), note)
-    val filterEnv = new Env(0.2f, 1f, 0.3f, 1.5f, None, note)
+    val env = new LinEnv(0.1f, 0.5f, 1f, 0.7f, Some(this), note)
+    val filterEnv = new LinEnv(0.2f, 1f, 0.3f, 1.5f, None, note)
     totalSound = new Digital2Pole(totalSound, filterEnv * 0.2f, 0.3f)
     totalSound = totalSound *  env
     //totalSound = new WaveFolder(totalSound, 1f, 3)
