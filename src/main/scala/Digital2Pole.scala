@@ -358,6 +358,24 @@ class SKF_OM_Diodes(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiGe
   var totalIters = 0
   var totalSubIters = 0
 
+  // variables
+  val cap: Float = 1
+  val capacitor_C: Float = cap
+  // the settings of the diode
+  val diode1_Vt:Float = 0.04f * 5 // 0.04
+  val diode1_Ids:Float = (1e-6).toFloat
+
+  var r_Resistor_R:Float = 0f
+  var signalVoltage_v: Float = 0f
+  var res: Float =  0f
+  var r_Resistor2_R:Float = 0f
+  var r_Resistor3_R:Float = 0f
+  // precompute some things
+  var powC2 = 0f
+  var powR3_4 = 0f
+  var powR_2 = 0f
+  var powR2_3 = 0f
+
   /**def calculateNext(sid: Int):Float = {
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
     val f = Future { calculateNext_(sid) }
@@ -368,119 +386,41 @@ class SKF_OM_Diodes(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiGe
   def calculateNext(sid: Int):Float = {
 
     //val cap = 0.000001 // farad
-    val cap: Float = 1
-    lazy val capacitor_C: Float = cap
 
-    val cut: Float =  min(1, cutoff.getValue(sid))
+    if ((sid % 100 == 0) || (r_Resistor_R==0))
+    {
+      val cut: Float =  min(1, cutoff.getValue(sid))
+      //val resistor = 100 - cut*100
+      //lazy val resistor: Double = 0.318 + 140 * (1 - cut)
+      //val targetFreq = 0.0011 + (0.5-0.0011) * cut // linear mapping from cutoff param to f_c/f_s
+      val targetFreq = 0.001f * pow(2,9*cut).toFloat // exponential mapping from cutoff param to f_c/f_s
+      val resistor = 1 / (2 * PiF * targetFreq * cap) // calculate res from frequency
+      r_Resistor_R = resistor
 
-    //val resistor = 100 - cut*100
-    //lazy val resistor: Double = 0.318 + 140 * (1 - cut)
+      val res: Float =  min(1f, reso.getValue(sid))
+      // starts to explode when r2/r3 is 1
+      r_Resistor2_R  = res * 100 + 1 // + 1 to avoid division by 0
+      r_Resistor3_R = 100
 
-    //val targetFreq = 0.0011 + (0.5-0.0011) * cut // linear mapping from cutoff param to f_c/f_s
-    val targetFreq = 0.001f * pow(2,9*cut).toFloat // exponential mapping from cutoff param to f_c/f_s
-    lazy val resistor = 1 / (2 * PiF * targetFreq * cap) // calculate res from frequency
-
-    lazy val r_Resistor_R:Float = resistor
-
-    lazy val signalVoltage_v: Float = input.getValue(sid)
-
-    lazy val res: Float =  min(1f, reso.getValue(sid))
-    // starts to explode when r2/r3 is 1
-    lazy val r_Resistor2_R:Float  = res * 100 + 1 // + 1 to avoid division by 0
-    lazy val r_Resistor3_R:Float = 100
-
-    // the settings of the diode
-    lazy val diode1_Vt:Float = 0.04f * 5 // 0.04
-    lazy val diode1_Ids:Float = (1e-6).toFloat
-
-    // precompute some things
-    val powC2 = pow(capacitor_C,2).toFloat
-    val powR3_4= pow(r_Resistor3_R,4).toFloat
-    val powR_2 = pow(r_Resistor_R,2).toFloat
-    val powR2_3 = pow(r_Resistor2_R,3).toFloat
-
-
-    def evalNonlinearFunction(estimate: Float): (Float,Float) = {
-
-      val diode_v = -estimate // this should have been elimiated (?)
-      val diode1_v = estimate
-
-      val expD = exp(diode_v/diode1_Vt).toFloat
-      val expD1 = exp(diode1_v/diode1_Vt).toFloat
-
-      val inter1 = 2f * capacitor_C * r_Resistor2_R * r_Resistor_R
-
-      val grad1: Float =( -powR2_3 * powR3_4
-      * ( r_Resistor3_R * (
-        (diode1_Ids * expD1 * r_Resistor2_R *(-4f * powC2 * pow(r_Resistor_R,2).toFloat - 2f * capacitor_C * r_Resistor_R - 1f)) / diode1_Vt
-        - 4f * powC2.toFloat * powR_2
-        - 2f * capacitor_C * r_Resistor_R - 1f)
-        + inter1
-      ))
-
-      val residue1: Float = (-powR2_3*powR3_4*(r_Resistor2_R*(-signalVoltage_v+2*capacitor1_state*capacitor_C*powR_2
-      + 2*capacitor_C*diode1_v*r_Resistor_R+(capacitor_state+capacitor1_state)*r_Resistor_R)+r_Resistor3_R*(r_Resistor2_R*(diode1_Ids *
-        expD*(4*powC2*powR_2+2*capacitor_C*r_Resistor_R+1)+diode1_Ids*expD1 *
-        (-4f * powC2*powR_2-2*capacitor_C*r_Resistor_R-1))+diode1_v
-        * (-4f * powC2*powR_2-2*capacitor_C*r_Resistor_R-1))) )
-
-        //System.out.println("signal:"+signalVoltage_v)
-        //System.out.println("residue1:"+residue1)
-
-        return (residue1, grad1)
-        //return residue1
-      }
-
-      def getCap(diode1_v: Float): Float = {
-        val diode_v = -diode1_v
-
-        return (
-          (r_Resistor2_R*signalVoltage_v-capacitor_state*r_Resistor2_R*r_Resistor_R
-            +((diode1_Ids*exp(diode1_v/diode1_Vt).toFloat-diode1_Ids*exp(diode_v/diode1_Vt).toFloat)*r_Resistor2_R+diode1_v)*r_Resistor3_R
-            +diode1_v*r_Resistor2_R
-          )
-          /
-          (2*capacitor_C*r_Resistor2_R*r_Resistor_R+r_Resistor2_R))
-        }
-
-        def getCap1(diode1_v: Float, cap_v: Float): Float = {
-          val diode_v = -diode1_v
-
-          return  ( -(capacitor1_state*r_Resistor2_R*r_Resistor_R+
-            ((diode1_Ids * exp(diode1_v/diode1_Vt).toFloat -diode1_Ids * exp(diode_v/diode1_Vt).toFloat) *r_Resistor2_R+diode1_v)*r_Resistor3_R+(diode1_v-cap_v)*r_Resistor2_R
-          ) / (2*capacitor_C*r_Resistor2_R*r_Resistor_R+r_Resistor2_R))
-        }
-
-        // alternative, using other equations
-        /**def getCap1_(diode1_v: Double): Double = {
-        val diode_v = -diode1_v
-
-        return ((((diode1_Ids*exp(diode_v/diode1_Vt)-diode1_Ids*exp(diode1_v/diode1_Vt))*r_Resistor2_R-diode1_v)*r_Resistor3_R)
-        /r_Resistor2_R)
-      }
-      def getCap_(diode1_v:Double, cap1_v:Double): Double = {
-      val diode_v = -diode1_v
-
-      return (((2*cap1_v*capacitor_C+capacitor1_state)
-      *r_Resistor2_R*r_Resistor_R
-      +((diode1_Ids*exp(diode1_v/diode1_Vt)-diode1_Ids*exp(diode_v/diode1_Vt))*r_Resistor2_R+diode1_v)
-      *r_Resistor3_R+(diode1_v+cap1_v)*r_Resistor2_R
-    )/r_Resistor2_R)
-  }*/
+      // precompute some things
+      powC2 = pow(capacitor_C,2).toFloat
+      powR3_4= pow(r_Resistor3_R,4).toFloat
+      powR_2 = pow(r_Resistor_R,2).toFloat
+      powR2_3 = pow(r_Resistor2_R,3).toFloat
+    }
+  signalVoltage_v = input.getValue(sid)
 
   // estimating diode1_v with newton method
   //estimate = 0.0 // initial estimate, comment out to use the one from the last iteration
 
-
-  //(residue, gradient) = evalNonlinearFunction(estimate)
   var (residue, gradient) = evalNonlinearFunction(estimate)
   var numIterations = 0
+
+  var newEstimate = estimate //+ 0.001 // perturb in case gradient is zero
+
   while ((numIterations < 50) && (abs(residue) > 0.001f)) {
-
-    var newEstimate = estimate //+ 0.001 // perturb in case gradient is zero
-
-    if (gradient != 0)
-      newEstimate = estimate - residue/gradient
+    //if (gradient != 0)
+    newEstimate = estimate - residue/gradient
 
     /**
     if (abs(gradient) < 0.001)
@@ -488,7 +428,6 @@ class SKF_OM_Diodes(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiGe
     else
       newEstimate = estimate - residue/gradient
       */
-
 
     var residue_gradient = evalNonlinearFunction(newEstimate)
     var newResidue = residue_gradient._1 // WTF
@@ -516,15 +455,8 @@ class SKF_OM_Diodes(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiGe
     totalIters += 1
   }
 
-  //System.out.println("numIterations "+ numIterations)
-  //System.out.println("residue "+ residue)
-  //System.out.println("estimate "+ estimate)
-
   val capacitor_v = getCap(estimate)
   val capacitor1_v = getCap1(estimate, capacitor_v)
-
-  //val capacitor1_v = getCap1_(estimate)
-  //val capacitor_v = getCap_(estimate, capacitor1_v)
 
   capacitor_state = -2 * 2 * capacitor_C * capacitor_v - capacitor_state
   capacitor1_state = -2 * 2 * capacitor_C * capacitor1_v - capacitor1_state
@@ -539,6 +471,70 @@ class SKF_OM_Diodes(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiGe
   return capacitor1_v.toFloat
   //return estimate.toFloat
 } // calculate Next
+
+def evalNonlinearFunction(estimate: Float): (Float,Float) = {
+
+  val diode_v = -estimate // this should have been elimiated (?)
+  val diode1_v = estimate
+
+  val expD = exp(diode_v/diode1_Vt).toFloat
+  val expD1 = exp(diode1_v/diode1_Vt).toFloat
+
+  val inter1 = 2f * capacitor_C * r_Resistor2_R * r_Resistor_R
+
+  val grad1: Float =( -powR2_3 * powR3_4
+  * ( r_Resistor3_R * (
+    (diode1_Ids * expD1 * r_Resistor2_R *(-4f * powC2 * pow(r_Resistor_R,2).toFloat - 2f * capacitor_C * r_Resistor_R - 1f)) / diode1_Vt
+    - 4f * powC2.toFloat * powR_2
+    - 2f * capacitor_C * r_Resistor_R - 1f)
+    + inter1
+  ))
+
+  val residue1: Float = (-powR2_3*powR3_4*(r_Resistor2_R*(-signalVoltage_v+2*capacitor1_state*capacitor_C*powR_2
+  + 2*capacitor_C*diode1_v*r_Resistor_R+(capacitor_state+capacitor1_state)*r_Resistor_R)+r_Resistor3_R*(r_Resistor2_R*(diode1_Ids *
+    expD*(4*powC2*powR_2+2*capacitor_C*r_Resistor_R+1)+diode1_Ids*expD1 *
+    (-4f * powC2*powR_2-2*capacitor_C*r_Resistor_R-1))+diode1_v
+    * (-4f * powC2*powR_2-2*capacitor_C*r_Resistor_R-1))) )
+
+    return (residue1, grad1)
+  }
+
+  def getCap(diode1_v: Float): Float = {
+    val diode_v = -diode1_v
+
+    return (
+      (r_Resistor2_R*signalVoltage_v-capacitor_state*r_Resistor2_R*r_Resistor_R
+        +((diode1_Ids*exp(diode1_v/diode1_Vt).toFloat-diode1_Ids*exp(diode_v/diode1_Vt).toFloat)*r_Resistor2_R+diode1_v)*r_Resistor3_R
+        +diode1_v*r_Resistor2_R
+      )
+      /
+      (2*capacitor_C*r_Resistor2_R*r_Resistor_R+r_Resistor2_R))
+    }
+
+    def getCap1(diode1_v: Float, cap_v: Float): Float = {
+      val diode_v = -diode1_v
+
+      return  ( -(capacitor1_state*r_Resistor2_R*r_Resistor_R+
+        ((diode1_Ids * exp(diode1_v/diode1_Vt).toFloat -diode1_Ids * exp(diode_v/diode1_Vt).toFloat) *r_Resistor2_R+diode1_v)*r_Resistor3_R+(diode1_v-cap_v)*r_Resistor2_R
+      ) / (2*capacitor_C*r_Resistor2_R*r_Resistor_R+r_Resistor2_R))
+    }
+
+    // alternative, using other equations
+    /**def getCap1_(diode1_v: Double): Double = {
+    val diode_v = -diode1_v
+
+    return ((((diode1_Ids*exp(diode_v/diode1_Vt)-diode1_Ids*exp(diode1_v/diode1_Vt))*r_Resistor2_R-diode1_v)*r_Resistor3_R)
+    /r_Resistor2_R)
+  }
+  def getCap_(diode1_v:Double, cap1_v:Double): Double = {
+  val diode_v = -diode1_v
+
+  return (((2*cap1_v*capacitor_C+capacitor1_state)
+  *r_Resistor2_R*r_Resistor_R
+  +((diode1_Ids*exp(diode1_v/diode1_Vt)-diode1_Ids*exp(diode_v/diode1_Vt))*r_Resistor2_R+diode1_v)
+  *r_Resistor3_R+(diode1_v+cap1_v)*r_Resistor2_R
+)/r_Resistor2_R)
+}*/
 
 def fexp(x:Double):Double = {
   val tmp: Long = (1512775 * x).toLong + (1072693248 - 60801)
