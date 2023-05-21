@@ -94,8 +94,12 @@ class ExpEnv(var atk: Float, var dec: Float, var sus:Float, var rel: Float, var 
 
       case 2 => {
         //val increment = (1-sus) / ( dec * sampleRate + epsilon)
-        value = value * fDecay
-        if (value <= sus) state = 3
+        val delta = (value - sus) * fDecay
+        value = sus + delta
+        // never actually switch officially to the sustain phase...
+
+        //value = value * fDecay
+        //if (value <= sus) state = 3
       }
 
       case 4 =>
