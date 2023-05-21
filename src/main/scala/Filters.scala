@@ -154,6 +154,142 @@ class Digital4PoleZDF(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSi
 
 }
 
+// try 4 pole filter with tan(x-y) nonlinearity and fixed point iteration
+class Digital4PoleFP(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiGen {
+
+  //var v0=0f
+  //var v1=0f
+  //val eps = 0.01f
+
+	var iceq1:Double = 0	// states in form
+	var iceq2:Double= 0	// of current
+	var iceq3:Double= 0	// equivalents
+	var iceq4:Double= 0	// of capacitors
+
+  var y1,y2,y3:Double = 0
+	var y4:Double= 0;		// to store the output from the last iteration
+
+  // statistics
+	var totalIters = 0;
+	var totalError = 0f;
+
+  // oversampling
+	var inTminus1 = 0f; // previour input sample, needed for linear interpolation in oversampling
+	val osFactor = 4
+
+	def calculateNext(sid: Int):Float = {
+    val in = input.getValue(sid)
+	  val cut =  min(0.95f, cutoff.getValue(sid)) * 0.5
+
+    val resonance = 4*reso.getValue(sid)
+
+
+
+		// need to check where this formula comes from...
+		//val g = tan( Pi * cut/GlobalConfig.sampleRate );
+    //var g = tan( Pi * cut);
+		//var g  = cut / osFactor
+		val targetFreq = 0.001f * pow(2,9*cut * 2).toFloat
+		var g = tan(Pi * targetFreq / osFactor)
+
+	  //val gDiv = 1.0f/(1.0 + g);
+
+    def runFilter(in:Float, outEstimate:Double ):Double = {
+
+      /**
+			val x0 = (in - resonance * outEstimate );
+
+      // tan only at mix in point
+
+			y1 = (g * tanh(x0)  + iceq1 ) * gDiv;
+  		y2 = (g * y1  + iceq2 ) * gDiv;
+  		y3 = (g * y2  + iceq3 ) * gDiv;
+  		val y4:Double = (g * y3 + iceq4 ) * gDiv;
+			*/
+
+			//y1 =gtanh(x−ky4 −y1)+s1 y2 =gtanh(y1 −y2)+s2
+		  //y3 =gtanh(y2 −y3)+s3
+		  //y4 =gtanh(y3 −y4)+s4
+
+			val x0 = (in - resonance * outEstimate );
+			y1 = g * fast_tanhf_rat(x0 - y1) + iceq1
+			y2 = g * fast_tanhf_rat(y1 - y2) + iceq2
+			y3 = g * fast_tanhf_rat(y2 - y3) + iceq3
+			y4 = g * fast_tanhf_rat(y3 - y4) + iceq4
+
+      // try linear for debugging purposes
+			/**val x0 = (in - tanh(resonance * outEstimate) );
+			y1 = g * (x0 - y1) + iceq1 // 1 nonlinearity so it doesn't explode
+			y2 = g * (y1 - y2) + iceq2
+			y3 = g * (y2 - y3) + iceq3
+			y4 = g * (y3 - y4) + iceq4*/
+
+  		return (y4 - outEstimate).toFloat // returns the error
+    }
+
+		// oversampling
+		for (oi <- 1 to (osFactor)) {
+
+			val oversampledInput = inTminus1 + (oi/osFactor.toFloat) * (in - inTminus1)
+
+			var outEstimate:Float = y4.toFloat; // start with output from last iteration
+
+			var error = runFilter(oversampledInput, outEstimate)
+
+			var counter = 0
+			while( (abs(error) > 0.001f) && (counter < 100) )
+			{
+				counter += 1
+				outEstimate = y4.toFloat;
+
+				error = runFilter(oversampledInput, outEstimate)
+				//System.out.println("Iteration " + counter + ", error " + error)
+			}
+
+			totalIters += counter
+			totalError += abs(error).toFloat
+
+			if((sid % 40000 == 0) && (oi == 1)) {
+				System.out.println("avg iters: "+ totalIters / 40000.0)
+				System.out.println("avg error: "+ totalError / 40000.0)
+				totalIters = 0
+				totalError = 0
+			}
+
+			//System.out.println("counter "+ counter)
+			//System.out.println("error "+ error)
+
+			iceq1 = 2*y1 - iceq1;
+			iceq2 = 2*y2 - iceq2;
+			iceq3 = 2*y3 - iceq3;
+			iceq4 = 2*y4 - iceq4;
+
+		} // oversampling
+
+    // todo: proper downsampling from oversampled representation, for now just take last value
+		return y4.toFloat;
+	}
+
+	def fast_tanhf_rat(xx:Double):Float = {
+		  val x = xx.toFloat
+	    val n0 = -8.73291016e-1f; // -0x1.bf2000p-1
+	    val n1 = -2.76107788e-2f; // -0x1.c46000p-6
+	    val d0 =  2.79589844e+0f; //  0x1.65e000p+1
+	    val x2 = x * x;
+	    //val num = fmaf (n0, x2, n1);
+			val num = n0 * x2 + n1
+	    val den = x2 + d0
+	    val quot = num / den
+	    var res = quot * x + x
+	    res = min(max (res, -1.0f), 1.0f)
+	    return res.toFloat;
+	}
+
+
+}
+
+
+
 
 
 /**

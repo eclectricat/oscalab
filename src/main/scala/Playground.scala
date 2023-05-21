@@ -234,7 +234,8 @@ object Playground {
     //val filter = new SKF_OM_noFB(gain * osc, cutoff, reso)
     //val filter = new SKF_OM_FB(gain * osc, cutoff, reso)
     //val filter = new SKF_OM(gain * osc, cutoff, reso)
-    val filter = new SKF_OM_Diodes(gain * osc, cutoff, reso)
+    //val filter = new SKF_OM_Diodes(gain * osc, cutoff, reso)
+    val filter = new Digital4PoleFP(gain * osc, cutoff, reso)
 
 
 
