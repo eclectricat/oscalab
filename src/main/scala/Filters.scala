@@ -77,10 +77,10 @@ class Digital4PoleZDF(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSi
 			val x0 = (in - resonance * outEstimate );
 
       // tan in every input
-  		/**y1 = (g * tanh( x0 ) + iceq1 ) * gDiv;
+  		y1 = (g * tanh( x0 ) + iceq1 ) * gDiv;
   		y2 = (g * tanh( y1 ) + iceq2 ) * gDiv;
   		y3 = (g * tanh( y2 ) + iceq3 ) * gDiv;
-  		val y4:Double = (g * tanh( y3 ) + iceq4 ) * gDiv;*/
+  		val y4:Double = (g * tanh( y3 ) + iceq4 ) * gDiv;
 
       // tan only in last stage
       /**y1 = (g * x0  + iceq1 ) * gDiv;
@@ -99,11 +99,10 @@ class Digital4PoleZDF(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSi
   		val y4:Double = (g * y3 + iceq4 ) * gDiv;*/
 
       // tan only at mix in point
-
-			y1 = (g * tanh(x0)  + iceq1 ) * gDiv;
+			/**y1 = (g * tanh(x0)  + iceq1 ) * gDiv;
   		y2 = (g * y1  + iceq2 ) * gDiv;
   		y3 = (g * y2  + iceq3 ) * gDiv;
-  		val y4:Double = (g * y3 + iceq4 ) * gDiv;
+  		val y4:Double = (g * y3 + iceq4 ) * gDiv;*/
 
   		return (y4 - outEstimate).toFloat // returns the error
     }
@@ -155,7 +154,7 @@ class Digital4PoleZDF(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSi
 }
 
 // try 4 pole filter with tan(x-y) nonlinearity and fixed point iteration
-class Digital4PoleFP(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiGen {
+class Digital4PoleFP(input: SiGen, cutoff: SiGen, reso: SiGen, ftype:String="ota4p") extends CachedSiGen {
 
   //var v0=0f
   //var v1=0f
@@ -165,6 +164,8 @@ class Digital4PoleFP(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiG
 	var iceq2:Double= 0	// of current
 	var iceq3:Double= 0	// equivalents
 	var iceq4:Double= 0	// of capacitors
+
+	var hp_feedback: Double = 0
 
   var y1,y2,y3:Double = 0
 	var y4:Double= 0;		// to store the output from the last iteration
@@ -177,13 +178,13 @@ class Digital4PoleFP(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiG
 	var inTminus1 = 0f; // previour input sample, needed for linear interpolation in oversampling
 	val osFactor = 4
 
+	val samples = new Array[Float](4)
+
 	def calculateNext(sid: Int):Float = {
     val in = input.getValue(sid)
 	  val cut =  min(0.95f, cutoff.getValue(sid)) * 0.5
 
     val resonance = 4*reso.getValue(sid)
-
-
 
 		// need to check where this formula comes from...
 		//val g = tan( Pi * cut/GlobalConfig.sampleRate );
@@ -194,37 +195,55 @@ class Digital4PoleFP(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiG
 
 	  //val gDiv = 1.0f/(1.0 + g);
 
+		//val ftype = "skf"
+
     def runFilter(in:Float, outEstimate:Double ):Double = {
 
-      /**
-			val x0 = (in - resonance * outEstimate );
+			ftype match {
+				case "ota4p" => {
+					val x0 = (in - resonance * outEstimate );
+					y1 = g * fast_tanhf_rat(x0 - y1) + iceq1
+					y2 = g * fast_tanhf_rat(y1 - y2) + iceq2
+					y3 = g * fast_tanhf_rat(y2 - y3) + iceq3
+					y4 = g * fast_tanhf_rat(y3 - y4) + iceq4
+					return (y4 - outEstimate).toFloat // returns the error
+				}
 
-      // tan only at mix in point
+				case "ota4pinverting" => {
+					val x0 = (in - resonance * outEstimate );
+					y1 = g * fast_tanhf_rat(-x0 - y1) + iceq1
+					y2 = g * fast_tanhf_rat(-y1 - y2) + iceq2
+					y3 = g * fast_tanhf_rat(-y2 - y3) + iceq3
+					y4 = g * fast_tanhf_rat(-y3 - y4) + iceq4
+					return (y4 - outEstimate).toFloat // returns the error
+				}
 
-			y1 = (g * tanh(x0)  + iceq1 ) * gDiv;
-  		y2 = (g * y1  + iceq2 ) * gDiv;
-  		y3 = (g * y2  + iceq3 ) * gDiv;
-  		val y4:Double = (g * y3 + iceq4 ) * gDiv;
-			*/
+				case "linear4p" => {
+					val x0 = (in - tanh(resonance * outEstimate) ); // 1 nonlinearity so it doesn't explode
+					y1 = g * (x0 - y1) + iceq1
+					y2 = g * (y1 - y2) + iceq2
+					y3 = g * (y2 - y3) + iceq3
+					y4 = g * (y3 - y4) + iceq4
+					return (y4 - outEstimate).toFloat
+				}
 
-			//y1 =gtanh(x−ky4 −y1)+s1 y2 =gtanh(y1 −y2)+s2
-		  //y3 =gtanh(y2 −y3)+s3
-		  //y4 =gtanh(y3 −y4)+s4
+				case "skf" => { // is a 2 pole, I know
+					//val feedback = fast_tanhf_rat(0.5 * resonance * outEstimate)
+					val feedback = 2 * asinh(0.25 * resonance * outEstimate)
+					y1 = feedback + g * fast_tanhf_rat(in - y1) + iceq1
+					y2 = g * fast_tanhf_rat(y1 - y2) + iceq2
+					y4 = y2 // because the surrounding logic assumes that y4 is the result
 
-			val x0 = (in - resonance * outEstimate );
-			y1 = g * fast_tanhf_rat(x0 - y1) + iceq1
-			y2 = g * fast_tanhf_rat(y1 - y2) + iceq2
-			y3 = g * fast_tanhf_rat(y2 - y3) + iceq3
-			y4 = g * fast_tanhf_rat(y3 - y4) + iceq4
+          hp_feedback = 0.5 * resonance * y2 // for the state update
 
-      // try linear for debugging purposes
-			/**val x0 = (in - tanh(resonance * outEstimate) );
-			y1 = g * (x0 - y1) + iceq1 // 1 nonlinearity so it doesn't explode
-			y2 = g * (y1 - y2) + iceq2
-			y3 = g * (y2 - y3) + iceq3
-			y4 = g * (y3 - y4) + iceq4*/
+					return (y2 - outEstimate).toFloat
+				}
 
-  		return (y4 - outEstimate).toFloat // returns the error
+				case _ => None
+			}
+
+			return 0f
+
     }
 
 		// oversampling
@@ -237,7 +256,7 @@ class Digital4PoleFP(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiG
 			var error = runFilter(oversampledInput, outEstimate)
 
 			var counter = 0
-			while( (abs(error) > 0.001f) && (counter < 100) )
+			while( (abs(error) > 0.0001f) && (counter < 100) )
 			{
 				counter += 1
 				outEstimate = y4.toFloat;
@@ -259,17 +278,24 @@ class Digital4PoleFP(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiG
 			//System.out.println("counter "+ counter)
 			//System.out.println("error "+ error)
 
-			iceq1 = 2*y1 - iceq1;
+		//	iceq1 = 2*y1 - iceq1;
+		// in case of the feedback via the HP input
+
+		  iceq1 = 2* (y1 - hp_feedback) - iceq1
 			iceq2 = 2*y2 - iceq2;
 			iceq3 = 2*y3 - iceq3;
 			iceq4 = 2*y4 - iceq4;
 
+			samples(oi-1) = y4.toFloat
+
 		} // oversampling
 
     // todo: proper downsampling from oversampled representation, for now just take last value
-		return y4.toFloat;
+		//return y4.toFloat;
+		return samples.toList.sum / osFactor
 	}
 
+  // from :  https://stackoverflow.com/questions/73770905/best-non-trigonometric-floating-point-approximation-of-tanhx-in-10-instruction
 	def fast_tanhf_rat(xx:Double):Float = {
 		  val x = xx.toFloat
 	    val n0 = -8.73291016e-1f; // -0x1.bf2000p-1
@@ -284,6 +310,21 @@ class Digital4PoleFP(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiG
 	    res = min(max (res, -1.0f), 1.0f)
 	    return res.toFloat;
 	}
+
+  // http://www.java2s.com/example/java-utility-method/asinh/asinh-double-a-8e35c.html
+	def asinh(aa:Double): Float =  {
+        var sign: Double = 0
+				var a = aa
+        // check the sign bit of the raw representation to handle -0
+        if (java.lang.Double.doubleToRawLongBits(a) < 0) {
+            a = abs(a)
+            sign = -1.0d
+        } else {
+            sign = 1.0d
+        }
+
+        return (sign * log(sqrt(a * a + 1.0d) + a)).toFloat;
+    }
 
 
 }

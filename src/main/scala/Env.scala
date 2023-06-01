@@ -39,6 +39,7 @@ class LinEnv(var atk: Float, var dec: Float, var sus:Float, var rel: Float, var 
       case _ =>
     }
 
+    // shape the linear env into something that looks like an exponential
     val expFactor = 1f //6f
     val expValue = if(state == 1) scala.math.pow(value,1f/expFactor) else scala.math.pow(value,expFactor)
     //val expValue = if(state == 1) value else scala.math.pow(value,expFactor)

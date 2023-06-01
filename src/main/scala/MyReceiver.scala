@@ -157,7 +157,8 @@ class PolySynth(deviceId:String = "") extends MyReceiver(deviceId) with EnvCallb
     val env = new LinEnv(attack.getValue(0), 0.5f, 1f, release.getValue(0), Some(this), note)
     val filterEnv = new LinEnv(attack.getValue(0), release.getValue(0), 0.3f, release.getValue(0), None, note)
     //totalSound = new Digital2Pole(totalSound, filterEnv * filterEnvAmount + cutoff, reso)
-    totalSound = new Mystran(totalSound, filterEnv * filterEnvAmount + cutoff, reso)
+    //totalSound = new Mystran(totalSound, filterEnv * filterEnvAmount + cutoff, reso)
+    totalSound = new Digital4PoleFP(totalSound, filterEnv * filterEnvAmount + cutoff, reso, "ota4p")
     totalSound = totalSound *  env
     //totalSound = new WaveFolder(totalSound, 1f, 3)
     return (totalSound, List(env, filterEnv))
@@ -197,8 +198,8 @@ abstract class Poly(deviceId:String = "") extends MyReceiver(deviceId) with EnvC
   val r = scala.util.Random
 
   val mx = new Mixer(List())
-  //val eng = new SoundEngine(mx)
-  val eng = new CoreAudioEngine(mx)
+  val eng = new SoundEngine(mx)
+  //val eng = new CoreAudioEngine(mx)
   eng.start()
 
   //showUI()
