@@ -158,7 +158,7 @@ class PolySynth(deviceId:String = "") extends MyReceiver(deviceId) with EnvCallb
     val filterEnv = new LinEnv(attack.getValue(0), release.getValue(0), 0.3f, release.getValue(0), None, note)
     //totalSound = new Digital2Pole(totalSound, filterEnv * filterEnvAmount + cutoff, reso)
     //totalSound = new Mystran(totalSound, filterEnv * filterEnvAmount + cutoff, reso)
-    totalSound = new Digital4PoleFP(totalSound, filterEnv * filterEnvAmount + cutoff, reso, "ota4p")
+    totalSound = new Digital4PoleFP(totalSound, filterEnv * filterEnvAmount + cutoff, reso, "skf")
     totalSound = totalSound *  env
     //totalSound = new WaveFolder(totalSound, 1f, 3)
     return (totalSound, List(env, filterEnv))
@@ -317,7 +317,7 @@ class Junolike(deviceId:String = "") extends Poly(deviceId) {
     //totalSound = new Digital4PoleZDF(totalSound, env * filterEnvAmount + cutoff, reso)
     //totalSound = new Mystran(totalSound, env * filterEnvAmount + cutoff, reso)
     //totalSound = new SKF_OM_Diodes(totalSound, env * filterEnvAmount + cutoff, reso)
-    totalSound = new Digital4PoleFP(totalSound, env * filterEnvAmount + cutoff, reso)
+    totalSound = new Digital4PoleFP(totalSound, env * filterEnvAmount + cutoff, reso, "ota4p")
     //totalSound = new SKF_OM_FB(totalSound, env * filterEnvAmount + cutoff, reso)
     totalSound = totalSound *  env
     //totalSound = new WaveFolder(totalSound, 1f, 3)

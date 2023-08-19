@@ -235,12 +235,29 @@ object Playground {
     //val filter = new SKF_OM_FB(gain * osc, cutoff, reso)
     //val filter = new SKF_OM(gain * osc, cutoff, reso)
     //val filter = new SKF_OM_Diodes(gain * osc, cutoff, reso)
-    val filter = new Digital4PoleFP(gain * osc, cutoff, reso)
+    val filter = new CircuitModelerTwin(gain * osc, cutoff, reso)
+    //val filter = new Digital4PoleFP(gain * osc, cutoff, reso)
 
 
 
     val eng = new SoundEngine(filter)
     return eng
+  }
+
+  def noiseTest(): SoundEngine = {
+    val cutoff = new ConstantValue(0.1f)
+    val reso = new ConstantValue(0.5f)
+    val pCut = new ParamInfo("Cutoff", 0, 1, cutoff)
+    val pReso = new ParamInfo("Res", 0, 1, reso)
+
+    val panel = new SliderPanel(List(pCut, pReso))
+    panel.show
+
+    val osc = new NoiseOsc()
+    val filter = new SKF_OM_FB(osc, cutoff, reso)
+    val eng = new SoundEngine(filter)
+    return eng
+
   }
 
 }

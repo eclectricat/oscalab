@@ -376,12 +376,9 @@ class SKF_OM_Diodes(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiGe
   var powR_2 = 0f
   var powR2_3 = 0f
 
-  /**def calculateNext(sid: Int):Float = {
-    implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
-    val f = Future { calculateNext_(sid) }
-    val res = Await.result(f, 1.seconds)
-    return res
-  }*/
+  // oversampling
+	var inTminus1 = 0f; // previour input sample, needed for linear interpolation in oversampling
+	val osFactor = 1 // oversampling doesn't change much. 
 
   def calculateNext(sid: Int):Float = {
 
@@ -393,7 +390,9 @@ class SKF_OM_Diodes(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiGe
       //val resistor = 100 - cut*100
       //lazy val resistor: Double = 0.318 + 140 * (1 - cut)
       //val targetFreq = 0.0011 + (0.5-0.0011) * cut // linear mapping from cutoff param to f_c/f_s
-      val targetFreq = 0.001f * pow(2,9*cut).toFloat // exponential mapping from cutoff param to f_c/f_s
+      var targetFreq = 0.001f * pow(2,9*cut).toFloat // exponential mapping from cutoff param to f_c/f_s
+      targetFreq = targetFreq / osFactor
+
       val resistor = 1 / (2 * PiF * targetFreq * cap) // calculate res from frequency
       r_Resistor_R = resistor
 
@@ -408,10 +407,20 @@ class SKF_OM_Diodes(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiGe
       powR_2 = pow(r_Resistor_R,2).toFloat
       powR2_3 = pow(r_Resistor2_R,3).toFloat
     }
-  signalVoltage_v = input.getValue(sid)
+  //signalVoltage_v = input.getValue(sid)
+  val in = input.getValue(sid)
 
   // estimating diode1_v with newton method
   //estimate = 0.0 // initial estimate, comment out to use the one from the last iteration
+
+  var capacitor_v = 0f
+  var capacitor1_v = 0f
+
+  // oversampling
+  for (oi <- 1 to (osFactor)) {
+
+    val oversampledInput = inTminus1 + (oi/osFactor.toFloat) * (in - inTminus1)
+    signalVoltage_v = oversampledInput
 
   var (residue, gradient) = evalNonlinearFunction(estimate)
   var numIterations = 0
@@ -455,18 +464,22 @@ class SKF_OM_Diodes(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiGe
     totalIters += 1
   }
 
-  val capacitor_v = getCap(estimate)
-  val capacitor1_v = getCap1(estimate, capacitor_v)
+  capacitor_v = getCap(estimate)
+  capacitor1_v = getCap1(estimate, capacitor_v)
 
   capacitor_state = -2 * 2 * capacitor_C * capacitor_v - capacitor_state
   capacitor1_state = -2 * 2 * capacitor_C * capacitor1_v - capacitor1_state
 
-  if(sid % 100000 == 0) {
+  if((sid % 100000 == 0)&& (oi == 1)) {
     System.out.println("Iterations per sample: "+ totalIters/100000f)
     System.out.println("Subiterations per sample: "+ totalSubIters/100000f)
     totalIters = 0
     totalSubIters = 0
   }
+
+} // oversampling
+
+  inTminus1 = in
 
   return capacitor1_v.toFloat
   //return estimate.toFloat

@@ -176,7 +176,7 @@ class Digital4PoleFP(input: SiGen, cutoff: SiGen, reso: SiGen, ftype:String="ota
 
   // oversampling
 	var inTminus1 = 0f; // previour input sample, needed for linear interpolation in oversampling
-	val osFactor = 4
+	val osFactor = 4 // 4
 
 	val samples = new Array[Float](4)
 
@@ -290,9 +290,11 @@ class Digital4PoleFP(input: SiGen, cutoff: SiGen, reso: SiGen, ftype:String="ota
 
 		} // oversampling
 
-    // todo: proper downsampling from oversampled representation, for now just take last value
-		//return y4.toFloat;
-		return samples.toList.sum / osFactor
+		inTminus1 = in // somehow it sounds better without this
+
+    // todo: proper downsampling from oversampled representation,
+		//return y4.toFloat; // for now just take last value
+		return samples.toList.sum / osFactor // poor mans downsampling
 	}
 
   // from :  https://stackoverflow.com/questions/73770905/best-non-trigonometric-floating-point-approximation-of-tanhx-in-10-instruction
