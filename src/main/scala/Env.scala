@@ -55,6 +55,10 @@ class LinEnv(var atk: Float, var dec: Float, var sus:Float, var rel: Float, var 
     state = 1
   }
 
+  def isDone() = state == 5
+
+  def canBeKilled() = isDone() || voiceController.isEmpty
+
 }
 
 class ExpEnv(var atk: Float, var dec: Float, var sus:Float, var rel: Float, var voiceController: Option[EnvCallbackDestination], var callbackIdentifier: Int) extends CachedSiGen with Env{
@@ -124,6 +128,10 @@ class ExpEnv(var atk: Float, var dec: Float, var sus:Float, var rel: Float, var 
     state = 1
   }
 
+  def isDone() = state == 5
+
+  def canBeKilled() = isDone() || voiceController.isEmpty
+
 }
 
 trait EnvCallbackDestination {
@@ -133,4 +141,6 @@ trait EnvCallbackDestination {
 trait Env {
   def release()
   def retrigger()
+  def isDone(): Boolean
+  def canBeKilled(): Boolean // if it has no callback (i.e. not relevant for ending the note) => true. otherwise true if IsDone()
 }
