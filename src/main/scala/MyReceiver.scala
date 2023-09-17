@@ -192,24 +192,34 @@ class BinauralSynth(deviceId:String = "MS") extends PolySynth(deviceId) {
 
 }
 
-abstract class Poly(deviceId:String = "") extends MyReceiver(deviceId) with EnvCallbackDestination {
+abstract class Poly(deviceId:String = "", val midiChannel: Option[Int]=None, sharedMixer: Option[Mixer]=None) extends MyReceiver(deviceId) with EnvCallbackDestination {
 
   var activeNotes = Map[Int, (SiGen, List[Env])]()
   val r = scala.util.Random
 
-  val mx = new Mixer(List())
-  val eng = new SoundEngine(mx)
-  //val eng = new CoreAudioEngine(mx)
-  eng.start()
+  var eng:Option[SoundEngine] = None
+
+  val mx = sharedMixer match {
+    case Some(mixer) => mixer
+    case _ =>
+       val mxr = new Mixer(List())
+       val e = new SoundEngine(mxr)
+       //val eng = new CoreAudioEngine(mx)
+       e.start()
+       eng = Some(e)
+       mxr
+  }
+
+
 
   //showUI()
 
-  override def close(): Unit = {super.close(); eng.stop()}
+  override def close(): Unit = {super.close(); eng.map(_.stop())}
 
   override def send(msg: javax.sound.midi.MidiMessage,value: Long): Unit = {
 
     msg match {
-      case a: ShortMessage => {
+      case a: ShortMessage if midiChannel.map(_ == a.getChannel()).getOrElse(true)  => {
 
         a.getCommand match {
 
@@ -217,6 +227,7 @@ abstract class Poly(deviceId:String = "") extends MyReceiver(deviceId) with EnvC
             System.out.println("NoteOn: ")
             System.out.println("Data: " + a.getData1())
             System.out.println("Data: " + a.getData2())
+            System.out.println("Channel: " + a.getChannel())
             val note = a.getData1()
 
             activeNotes.get(note) match { // is there already a sound on that note?

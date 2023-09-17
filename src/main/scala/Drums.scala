@@ -1,6 +1,31 @@
 import MyImplicits._
 
-class Drums(deviceId:String = "") extends Poly(deviceId) {
+
+class PolyDrums(deviceId:String = "") {
+
+  val mxr = new Mixer(List())
+  val e = new SoundEngine(mxr)
+  //val eng = new CoreAudioEngine(mx)
+  e.start()
+
+
+   val d1 = new Drums(deviceId, midiChannel=Some(0), sharedMixer=Some(mxr))
+   val d2 = new Drums(deviceId, midiChannel=Some(1), sharedMixer=Some(mxr))
+   val d3 = new Drums(deviceId, midiChannel=Some(2), sharedMixer=Some(mxr))
+   val d4 = new Drums(deviceId, midiChannel=Some(3), sharedMixer=Some(mxr))
+
+   def close() = {
+     d1.close()
+     d2.close()
+     d3.close()
+     d4.close()
+     e.stop()
+   }
+
+
+}
+
+class Drums(deviceId:String = "", midiChannel: Option[Int]=None, sharedMixer: Option[Mixer]=None) extends Poly(deviceId, midiChannel, sharedMixer) {
 
   val cutoff = new  ConstantValue(0f)
   val reso = new ConstantValue(0f)
