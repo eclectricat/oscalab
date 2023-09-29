@@ -1,27 +1,34 @@
 import MyImplicits._
 
 
-class PolyDrums(deviceId:String = "") {
+class PolyDrums(deviceId:String = "", nbInstruments:Int=4) {
 
   val mxr = new Mixer(List())
   val e = new SoundEngine(mxr)
   //val eng = new CoreAudioEngine(mx)
   e.start()
 
+  val drums = for(i<- 0 until nbInstruments)
+    yield new Drums(deviceId, midiChannel=Some(i), sharedMixer=Some(mxr))
 
-   val d1 = new Drums(deviceId, midiChannel=Some(0), sharedMixer=Some(mxr))
-   val d2 = new Drums(deviceId, midiChannel=Some(1), sharedMixer=Some(mxr))
-   val d3 = new Drums(deviceId, midiChannel=Some(2), sharedMixer=Some(mxr))
-   val d4 = new Drums(deviceId, midiChannel=Some(3), sharedMixer=Some(mxr))
+  def close() = {
+    drums.map(_.close())
+    e.stop()
+  }
 
-   def close() = {
-     d1.close()
-     d2.close()
-     d3.close()
-     d4.close()
-     e.stop()
-   }
+  def savePatch(folderPath: String) = { // typically provide a folder name here
+    drums.foreach { d =>
+      val fn = "drums_channel_"+ d.midiChannel.getOrElse(99)+ ".json"
+      d.sliderPanel.saveParams(Some(folderPath+"/"+fn))
+    }
+  }
 
+  def loadPatch(prefixPath: String) = {
+    for (i <- 0 until nbInstruments) {
+      val fn = "drums_channel_"+ i + ".json"
+      drums.toList(i).sliderPanel.loadParamsFromFile(prefixPath+fn)
+    }
+  }
 
 }
 
@@ -72,10 +79,11 @@ class Drums(deviceId:String = "", midiChannel: Option[Int]=None, sharedMixer: Op
   val UINoise = new PanelDividerUI("**** NOISE *****")
   val UIClick = new PanelDividerUI("**** CLICK *****")
 
-  new SliderPanel(List(UITone, pPitchRelease,pPitchEnvAmount,pSinAmpRelease,pSinLevel,pFmLevel,pFmRatio,
+  val sliderPanel = new SliderPanel(List(UITone, pPitchRelease,pPitchEnvAmount,pSinAmpRelease,pSinLevel,pFmLevel,pFmRatio,
     UINoise, pNoiseAmpRelease, pNoiseLevel,
     pCutoff,pReso, pFilterRelease,pFilterEnvAmount,
-  UIClick, pClickAmpRelease, pClickLevel)).show()
+  UIClick, pClickAmpRelease, pClickLevel))
+  sliderPanel.show()
 
   override def newVoice(note: Int, detune: Float=0):Tuple2[SiGen, List[Env]] = {
     // 2(m−69)/12(440 Hz)
@@ -119,6 +127,11 @@ class Drums(deviceId:String = "", midiChannel: Option[Int]=None, sharedMixer: Op
 
       case _ =>
     }
+  }
+
+  override def close() = {
+    super.close()
+    sliderPanel.close()
   }
 
 }

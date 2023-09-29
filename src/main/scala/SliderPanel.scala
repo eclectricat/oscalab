@@ -3,22 +3,44 @@ import java.awt.{List => _, _};
 import javax.swing.event._;
 import java.awt.event._;
 
+import org.json4s.JsonDSL._
+import org.json4s._
+import org.json4s.native.JsonMethods._
+
+import java.nio.file.{Paths, Files}
+import java.nio.charset.StandardCharsets
+import scala.io.Source
+
 trait SliderPanelElement {
   def draw(panel: JPanel)
+  def jsonRepr: Option[(String, org.json4s.JDouble)] = None
+  def set(newValue: Float) = { }
 }
 
 class ParamInfo(val name:String, val min:Float, val max:Float, val value:ConstantValue) extends SliderPanelElement {
+
+  var slider:Option[JSlider] = None
+
   def draw(panel: JPanel) = {
     val sliderLabel = new JLabel(name, SwingConstants.CENTER)
     sliderLabel.setAlignmentX(Component.CENTER_ALIGNMENT)
 
     val scaledValue = 100 * (value.value - min) / (max-min)
-    val slider = new JSlider(SwingConstants.HORIZONTAL,0, 100, scaledValue.round)
+    val sl = new JSlider(SwingConstants.HORIZONTAL,0, 100, scaledValue.round)
+    slider = Some(sl)
 
     panel.add(sliderLabel)
-    panel.add(slider)
+    panel.add(sl)
 
-    slider.addChangeListener(new SliderChangeListener(this))
+    sl.addChangeListener(new SliderChangeListener(this))
+  }
+
+  override def jsonRepr: Option[(String, org.json4s.JDouble)] = Some((name, JDouble(value.value)))
+  override def set(newValue: Float) = {
+    value.value = newValue
+
+    val intValue = (100 * (value.value - min) / (max-min))
+    slider.map(_.setValue(intValue.round))
   }
 
 }
@@ -64,5 +86,36 @@ class SliderPanel(params:List[SliderPanelElement]) {
   }
 
   def close() = {frame.map(_.setVisible(false))}
+
+  def saveParams(filename: Option[String]) = {
+    val json = render(params.map(p => p.jsonRepr).flatten)
+    val cjson = compact(json)
+
+    filename.map { fn =>
+      Files.write(Paths.get(fn), cjson.getBytes(StandardCharsets.UTF_8))
+    }
+    cjson
+  }
+
+  def loadParamsFromFile(filename:String) = {
+    val string = Source.fromFile(filename).mkString
+    loadParams(string)
+    string
+  }
+
+  def loadParams(json:String) = {
+    val map = parse(json).values.asInstanceOf[Map[String, Double]]
+
+    params.foreach {
+      case p: ParamInfo =>
+        map.get(p.name) match {
+          case Some(double) => {
+             p.set(double.toFloat)
+          }
+          case _ => System.out.println("parameter not found: "+p.name)
+        }
+      case _ => System.out.println("sliderpanelelement that is not a paraminfo")
+    }
+  }
 
 }
