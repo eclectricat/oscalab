@@ -89,11 +89,11 @@ class Drums(deviceId:String = "", midiChannel: Option[Int]=None, sharedMixer: Op
     // 2(m−69)/12(440 Hz)
     val freq =  (440f * math.pow(2, ((note)-69)/12f)).toFloat
 
-    val sinAmpEnv = new ExpEnv(0, sinAmpRelease.getValue(0), 0 , sinAmpRelease.getValue(0), Some(this), note)
-    val noiseAmpEnv = new ExpEnv(0, noiseAmpRelease.getValue(0), 0 , noiseAmpRelease.getValue(0), Some(this), note)
-    val clickAmpEnv = new ExpEnv(0, clickAmpRelease.getValue(0), 0 , clickAmpRelease.getValue(0), None, note)
-    val pitchEnv = new ExpEnv(0, pitchRelease.getValue(0), 0 , pitchRelease.getValue(0), None, note)
-    val filterEnv = new ExpEnv(0, filterRelease.getValue(0), 0 , filterRelease.getValue(0), None, note)
+    val sinAmpEnv = new ExpEnv(0, sinAmpRelease, 0 , sinAmpRelease, Some(this), note)
+    val noiseAmpEnv = new ExpEnv(0, noiseAmpRelease, 0 , noiseAmpRelease, Some(this), note)
+    val clickAmpEnv = new ExpEnv(0, clickAmpRelease, 0 , clickAmpRelease, None, note)
+    val pitchEnv = new ExpEnv(0, pitchRelease, 0 , pitchRelease, None, note)
+    val filterEnv = new ExpEnv(0, filterRelease, 0 , filterRelease, None, note)
 
     val baseFreq = freq + pitchEnv * pitchEnvAmount*1000f
     val fmFreq = baseFreq * math.pow(2, fmRatio.getValue(0)).toFloat

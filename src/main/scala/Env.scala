@@ -61,7 +61,7 @@ class LinEnv(var atk: Float, var dec: Float, var sus:Float, var rel: Float, var 
 
 }
 
-class ExpEnv(var atk: Float, var dec: Float, var sus:Float, var rel: Float, var voiceController: Option[EnvCallbackDestination], var callbackIdentifier: Int) extends CachedSiGen with Env{
+class ExpEnv(var atk: SiGen, var dec: SiGen, var sus:SiGen, var rel: SiGen, var voiceController: Option[EnvCallbackDestination], var callbackIdentifier: Int) extends CachedSiGen with Env{
 
   var state = 1
   // 0: not started
@@ -77,19 +77,19 @@ class ExpEnv(var atk: Float, var dec: Float, var sus:Float, var rel: Float, var 
 
   // assuming atk, dec and so on specify the time it takes until the signal is 0.001
   val targetLevel = 0.001f
-  var fDecay = scala.math.pow(targetLevel, 1f/(dec*GlobalConfig.sampleRate)).toFloat
-  var fRelease = scala.math.pow(targetLevel, 1f/(rel*GlobalConfig.sampleRate)).toFloat
+  var fDecay = scala.math.pow(targetLevel, 1f/(dec.getValue(0)*GlobalConfig.sampleRate)).toFloat
+  var fRelease = scala.math.pow(targetLevel, 1f/(rel.getValue(0)*GlobalConfig.sampleRate)).toFloat
 
   def recalculateExpFactors() = {
-    fDecay = scala.math.pow(targetLevel, 1f/(dec*GlobalConfig.sampleRate)).toFloat
-    fRelease = scala.math.pow(targetLevel, 1f/(rel*GlobalConfig.sampleRate)).toFloat
+    fDecay = scala.math.pow(targetLevel, 1f/(dec.getValue(0)*GlobalConfig.sampleRate)).toFloat
+    fRelease = scala.math.pow(targetLevel, 1f/(rel.getValue(0)*GlobalConfig.sampleRate)).toFloat
   }
 
   def calculateNext(sid: Int): Float = {
     state match {
       case 1 => {
         // increase by one in atk seconds,
-        val increment = 1 / (atk * sampleRate + epsilon)
+        val increment = 1 / (atk.getValue(0) * sampleRate + epsilon)
         value += increment
         if (value >= 1.0) {
           value = 1.0f
@@ -99,8 +99,8 @@ class ExpEnv(var atk: Float, var dec: Float, var sus:Float, var rel: Float, var 
 
       case 2 => {
         //val increment = (1-sus) / ( dec * sampleRate + epsilon)
-        val delta = (value - sus) * fDecay
-        value = sus + delta
+        val delta = (value - sus.getValue(0)) * fDecay
+        value = sus.getValue(0) + delta
         // never actually switch officially to the sustain phase...
 
         //value = value * fDecay
@@ -125,6 +125,7 @@ class ExpEnv(var atk: Float, var dec: Float, var sus:Float, var rel: Float, var 
   }
 
   def retrigger() = {
+    recalculateExpFactors()
     state = 1
   }
 
