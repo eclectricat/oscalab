@@ -1,3 +1,5 @@
+package framework
+
 trait SiGen {
   // this is the minimum that needs to be implemented in every sublass
   def getValue(sid: Int): Float

@@ -1,28 +1,7 @@
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+package framework
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.TargetDataLine;
-import javax.sound.sampled.LineListener;
-import javax.sound.sampled.LineEvent;
+import ch.section6.jcoreaudio.{AudioLet, CoreAudioState, JCoreAudio}
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-
-import scala.math.max
-import scala.math.min
-
-import ch.section6.jcoreaudio.AudioDevice
-import ch.section6.jcoreaudio.JCoreAudio
-import ch.section6.jcoreaudio.AudioLet
-import ch.section6.jcoreaudio.CoreAudioState
 import scala.collection.JavaConverters._
 
 class CoreAudioEngine(var source: SiGen) extends ch.section6.jcoreaudio.CoreAudioListener {

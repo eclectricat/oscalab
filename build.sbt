@@ -1,3 +1,6 @@
+
+scalaVersion := "2.12.15"
+
 run / javaOptions += "-Djava.library.path=./lib/"
 run / javaOptions += "-Xverify:none"
 
@@ -5,3 +8,8 @@ run / javaOptions += "-Xverify:none"
 run / fork := true
 
 libraryDependencies += "org.json4s" %% "json4s-native" % "4.0.6"
+
+Compile / unmanagedSourceDirectories +=
+  baseDirectory.value / "live"
+
+

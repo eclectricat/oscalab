@@ -1,4 +1,6 @@
-import MyImplicits._
+package framework
+
+import framework.MyImplicits._
 
 
 class PolyDrums(deviceId:String = "", nbInstruments:Int=4) {
@@ -37,6 +39,8 @@ class Drums(deviceId:String = "", midiChannel: Option[Int]=None, sharedMixer: Op
   val cutoff = new  ConstantValue(0f)
   val reso = new ConstantValue(0f)
 
+  val cutoffHp = new  ConstantValue(0f)
+
   val pitchRelease = new ConstantValue(1f)
   val noiseAmpRelease = new ConstantValue(1f)
   val sinAmpRelease = new ConstantValue(1f)
@@ -57,6 +61,8 @@ class Drums(deviceId:String = "", midiChannel: Option[Int]=None, sharedMixer: Op
 
   val pCutoff = new ParamInfo("cutoff", 0, 1, cutoff)
   val pReso = new ParamInfo("reso", 0, 1, reso)
+
+  val pCutoffHp = new ParamInfo("cutoffHp", 0, 1, cutoffHp)
 
   val pPitchRelease = new ParamInfo("pitchRelease", 0, 1, pitchRelease)
   val pNoiseAmpRelease = new ParamInfo("noiseAmpRelease", 0, 2, noiseAmpRelease)
@@ -81,7 +87,7 @@ class Drums(deviceId:String = "", midiChannel: Option[Int]=None, sharedMixer: Op
 
   val sliderPanel = new SliderPanel(List(UITone, pPitchRelease,pPitchEnvAmount,pSinAmpRelease,pSinLevel,pFmLevel,pFmRatio,
     UINoise, pNoiseAmpRelease, pNoiseLevel,
-    pCutoff,pReso, pFilterRelease,pFilterEnvAmount,
+    pCutoff,pReso,pFilterRelease,pFilterEnvAmount,pCutoffHp,
   UIClick, pClickAmpRelease, pClickLevel))
   sliderPanel.show()
 
@@ -106,6 +112,7 @@ class Drums(deviceId:String = "", midiChannel: Option[Int]=None, sharedMixer: Op
     // noise
     var totalSound: SiGen = noise * noiseLevel * noiseAmpEnv
     totalSound = new SKF_OM_FB(totalSound, filterEnv * filterEnvAmount + cutoff, reso)
+    totalSound = new Digital2PoleHP(totalSound, cutoffHp, 0f)
     // tone
     totalSound = totalSound + sin * sinLevel * sinAmpEnv
     // click

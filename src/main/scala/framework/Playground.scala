@@ -1,4 +1,6 @@
-import MyImplicits._
+package framework
+
+import framework.MyImplicits._
 
 object Playground {
 
@@ -76,19 +78,118 @@ object Playground {
   }
 
   def fmTest: SoundEngine = {
-    val fMod = new ConstantValue(40)
-    val pFmod = new ParamInfo("fmod", 1, 100,  fMod)
+
+    val fCarrier = new ConstantValue(150);
+    val pFCarrier = new ParamInfo("carrier", 100,2000, fCarrier)
+
+    val fModRatio = new ConstantValue(1)
+    val pFmodRatio = new ParamInfo("fmodratio", 1, 10,  fModRatio)
 
     val aMod = new ConstantValue(1)
     val pAmod = new ParamInfo("aMod", 0, 400,  aMod)
 
-    val panel = new SliderPanel(List(pFmod, pAmod))
+    val panel = new SliderPanel(List(pFCarrier, pFmodRatio, pAmod))
     panel.show
-    val fm = new SinOsc(150 + aMod * new SinOsc(fMod))
+    val fm = new SinOsc(fCarrier + aMod * new SinOsc(fModRatio * fCarrier))
     //val fold = new WaveFolder(new SinOsc(150), scale, 4)
     val eng = new SoundEngine(fm)
     eng
   }
+
+  def pmTest: SoundEngine = {
+
+    val fCarrier = new ConstantValue(150);
+    val pFCarrier = new ParamInfo("carrier", 100,2000, fCarrier)
+
+    val fModRatio = new ConstantValue(1)
+    val pFmodRatio = new ParamInfo("fmodratio", 1, 10,  fModRatio)
+
+    val aMod = new ConstantValue(1)
+    val pAmod = new ParamInfo("aMod", 0, 5,  aMod)
+
+    val panel = new SliderPanel(List(pFCarrier, pFmodRatio, pAmod))
+    panel.show
+    val fm = new SinOsc(fCarrier, aMod * new SinOsc(fModRatio * fCarrier))
+    //val fold = new WaveFolder(new SinOsc(150), scale, 4)
+    val eng = new SoundEngine(fm)
+    eng
+  }
+
+  def fmSaw: SoundEngine = {
+
+    val fCarrier = new ConstantValue(150);
+    val pFCarrier = new ParamInfo("carrier", 100,2000, fCarrier)
+
+    //val fModRatio = new ConstantValue(1)
+    //val pFmodRatio = new ParamInfo("fmodratio", 1, 10,  fModRatio)
+
+    val aMod = new ConstantValue(1)
+    val pAmod = new ParamInfo("aMod", 0, 4000,  aMod)
+
+    val panel = new SliderPanel(List(pFCarrier, pAmod))
+    panel.show
+    val fm = new SinOsc(fCarrier + aMod * new SinOsc(1f * fCarrier))
+    //val fold = new WaveFolder(new SinOsc(150), scale, 4)
+    val eng = new SoundEngine(fm)
+    eng
+  }
+
+  def fmFeedback: SoundEngine = {
+
+    val fCarrier = new ConstantValue(150);
+    val pFCarrier = new ParamInfo("carrier", 100,2000, fCarrier)
+
+
+    val aMod = new ConstantValue(1)
+    val pAmod = new ParamInfo("aMod", 0, 400,  aMod)
+
+
+    val panel = new SliderPanel(List(pFCarrier, pAmod))
+    panel.show
+
+    val freq = new Mixer(List(fCarrier))
+    //val fm = new SinOsc(fCarrier + aMod * new SinOsc(1f * fCarrier))
+    val fm = new SinOsc(freq)
+    val delay = new SiGen {
+      def getValue(sid: Int)  = fm.latestValue
+    }
+    freq.sources = List(fCarrier, aMod * delay)
+
+    val eng = new SoundEngine(fm)
+    eng
+  }
+
+  def pmFeedback: SoundEngine = {
+
+    val fCarrier = new ConstantValue(150);
+    val pFCarrier = new ParamInfo("carrier", 100,2000, fCarrier)
+
+    val fModRatio = new ConstantValue(1)
+    val pFmodRatio = new ParamInfo("fmodratio", 1, 10,  fModRatio)
+
+    val fb = new ConstantValue(1)
+    val pFb = new ParamInfo("fb", 0, 4,  fb)
+
+    val xmod = new ConstantValue(1)
+    val pXmod = new ParamInfo("xmod", 0, 4,  xmod)
+
+
+    val panel = new SliderPanel(List(pFCarrier, pFmodRatio, pXmod, pFb))
+    panel.show
+
+    //val freq = new Mixer(List(fCarrier))
+    //val fm = new SinOsc(fCarrier + aMod * new SinOsc(1f * fCarrier))
+    val fm = new SinOsc(fCarrier)
+    val delay = new SiGen {
+      def getValue(sid: Int)  = fm.latestValue
+    }
+    fm.phaseOffset = fb * delay + xmod * new SinOsc(fModRatio * fCarrier)
+
+    val eng = new SoundEngine(fm)
+    eng
+  }
+
+
 
   def doubleFMWF: SoundEngine = {
     val fMod1 = new ConstantValue(40)
@@ -229,13 +330,13 @@ object Playground {
     //val filter = new Digital2Pole(gain * osc, cutoff, reso)
     //val filter = new Chamberlin(gain * osc, cutoff, reso)
     //val filter = new Mystran(gain * osc, cutoff, reso)
-    //val filter = new Digital4PoleZDF(gain * osc, cutoff, reso)
+    val filter = new Digital4PoleZDF(gain * osc, cutoff, reso)
     //val filter = new SimperSVF(gain * osc, cutoff, reso)
     //val filter = new SKF_OM_noFB(gain * osc, cutoff, reso)
     //val filter = new SKF_OM_FB(gain * osc, cutoff, reso)
     //val filter = new SKF_OM(gain * osc, cutoff, reso)
     //val filter = new SKF_OM_Diodes(gain * osc, cutoff, reso)
-    val filter = new CircuitModelerTwin(gain * osc, cutoff, reso)
+    //val filter = new CircuitModelerTwin(gain * osc, cutoff, reso)
     //val filter = new Digital4PoleFP(gain * osc, cutoff, reso)
 
 

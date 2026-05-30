@@ -1,3 +1,5 @@
+package framework
+
 
 
 class SplineOsc(val freq: SiGen, var controlpoints:List[Tuple2[Float, Float]]) extends CachedSiGen {

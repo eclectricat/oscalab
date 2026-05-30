@@ -1,4 +1,6 @@
-import MyImplicits._
+package framework
+
+import framework.MyImplicits._
 
 class FmSynth(deviceId:String = "") extends PolySynth(deviceId) {
 

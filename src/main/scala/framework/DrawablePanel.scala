@@ -1,7 +1,8 @@
+package framework
+
+import java.awt.event._
+import java.awt.{List => _, _}
 import javax.swing._;
-import java.awt.{List => _, _};
-import javax.swing.event._;
-import java.awt.event._;
 
 
 class DrawablePanel {

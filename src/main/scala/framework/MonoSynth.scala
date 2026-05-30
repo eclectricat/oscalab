@@ -1,9 +1,8 @@
-import javax.sound.midi.MidiSystem
-import javax.sound.midi.Receiver
-import javax.sound.midi.Transmitter
-import javax.sound.midi._
+package framework
 
-import MyImplicits._
+import framework.MyImplicits._
+
+import javax.sound.midi._
 
 class MonoSynth(deviceId:String = "") extends MyReceiver(deviceId) with StandardKnobs {
 

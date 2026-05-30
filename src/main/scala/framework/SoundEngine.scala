@@ -1,23 +1,9 @@
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+package framework
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.TargetDataLine;
-import javax.sound.sampled.LineListener;
-import javax.sound.sampled.LineEvent;
-
-import scala.concurrent.Future
+import javax.sound.sampled._
 import scala.concurrent.ExecutionContext.Implicits.global
-
-import scala.math.max
-import scala.math.min
+import scala.concurrent.Future
+import scala.math.{max, min}
 
 
 class SoundEngine(var source: SiGen) extends LineListener {
@@ -28,7 +14,6 @@ class SoundEngine(var source: SiGen) extends LineListener {
   var sidCounter:Int = 0
 
   def start() {
-
     running = true
     Future{run()}
 

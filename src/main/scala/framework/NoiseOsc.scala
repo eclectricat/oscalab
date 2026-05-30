@@ -1,3 +1,5 @@
+package framework
+
 class NoiseOsc() extends CachedSiGen {
 
   /**;*/

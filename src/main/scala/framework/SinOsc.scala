@@ -1,4 +1,6 @@
-class SinOsc(var freq: SiGen = new ConstantValue(440)) extends CachedSiGen {
+package framework
+
+class SinOsc(var freq: SiGen = new ConstantValue(440), var phaseOffset: SiGen = new ConstantValue(0f)) extends CachedSiGen {
 
   var relativePosition: Float = 0f
 
@@ -9,7 +11,7 @@ class SinOsc(var freq: SiGen = new ConstantValue(440)) extends CachedSiGen {
 
     val timestep = freq.getValue(sid)/sampleRate
 
-    val result = math.sin(2 * math.Pi * relativePosition).toFloat
+    val result = math.sin(2 * math.Pi * relativePosition + phaseOffset.getValue(sid)).toFloat
 
     relativePosition += timestep
     if (relativePosition > 1) relativePosition -= 1

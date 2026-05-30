@@ -1,9 +1,8 @@
-import javax.sound.midi.MidiSystem
-import javax.sound.midi.Receiver
-import javax.sound.midi.Transmitter
-import javax.sound.midi._
+package framework
 
-import MyImplicits._
+import framework.MyImplicits._
+
+import javax.sound.midi._
 
 class MyReceiver(deviceId:String = "") extends Receiver {
   MidiSystem.getMidiDeviceInfo().map(a => System.out.println("MIDI info:" +  a + "//" + MidiSystem.getMidiDevice(a).getClass().getSimpleName()))
@@ -333,6 +332,54 @@ class Junolike(deviceId:String = "") extends Poly(deviceId) {
     totalSound = totalSound *  env
     //totalSound = new WaveFolder(totalSound, 1f, 3)
     return (totalSound, List(env))
+  }
+
+}
+
+class ProudlyDigital(deviceId:String = "") extends Poly(deviceId) {
+
+
+  val attack = new ConstantValue(0.2f)
+  val release = new ConstantValue(1f)
+  val sustain = new ConstantValue(0.5f)
+  val detuneLevel = new ConstantValue(1f)
+  val detuneSpeed = new ConstantValue(1f)
+  //val tremoloLevel = new ConstantValue(1f)
+  val tremoloSpeed = new ConstantValue(1f)
+
+
+
+  val pAttack = new ParamInfo("attack", 0, 2, attack)
+  val pRelease = new ParamInfo("release", 0, 5, release)
+  val pSustain = new ParamInfo("sustain", 0, 1, sustain)
+
+  val pDetuneLevel = new ParamInfo("detuneL", 0, 2, detuneLevel)
+  val pDetuneSpeed = new ParamInfo("detuneSpeed", 0.1f, 10f, detuneSpeed)
+  //val pTremoloLevel = new ParamInfo("tremoloL", 0, 2)
+  val pTremoloSpeed = new ParamInfo("tremoloSpeed", 0.1f, 10, tremoloSpeed)
+
+
+
+  new SliderPanel(List( pAttack, pSustain, pRelease, pDetuneLevel, pDetuneSpeed, pTremoloSpeed)).show()
+
+  override def newVoice(note: Int, detune: Float=0):Tuple2[SiGen, List[Env]] = {
+    // 2(m−69)/12(440 Hz)
+    val freq =  (440f * math.pow(2, ((note)-69)/12f)).toFloat
+
+    val freqs = (1 to 10).map(_ => freq * (Math.round(r.nextFloat() * 10)+1))
+
+    var mix: SiGen = new Mixer(freqs.map(f =>
+      new PanBalance(
+        new SinOsc(f + 10f * detuneLevel * new SinOsc(detuneSpeed * 0.1f * r.nextFloat()))
+         * new SinOsc(r.nextFloat() * 0.3f * tremoloSpeed, phaseOffset = 1.4f) * (freq/f),
+        -1f + r.nextFloat()* 2f)
+    ).toList)
+
+    val env = new ExpEnv(attack.getValue(0), release.getValue(0), sustain.getValue(0), release.getValue(0), Some(this), note)
+
+    mix = mix *  env
+
+    return (mix, List(env))
   }
 
 }

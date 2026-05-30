@@ -1,6 +1,6 @@
+package framework
+
 import scala.math._
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.concurrent.duration._
 
 class Digital2Pole(input: SiGen, cutoff: SiGen, reso: SiGen) extends CachedSiGen {
 

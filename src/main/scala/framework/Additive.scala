@@ -1,4 +1,6 @@
-import MyImplicits._
+package framework
+
+import framework.MyImplicits._
 
 
 object Additive {

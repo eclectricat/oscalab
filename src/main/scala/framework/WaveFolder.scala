@@ -1,3 +1,5 @@
+package framework
+
 
 
 class WaveFolder(in: SiGen, scaling: SiGen, numStages: Int = 1) extends SiGen {
@@ -44,6 +46,17 @@ class WaveFolderSqueeze(in: SiGen, scaling: SiGen) extends SiGen {
     }
     //value = Math.sin(value+0.5f).toFloat
     //value = value * value
+    return value
+  }
+}
+
+class WaveShaper(in: SiGen, scaling: SiGen) extends SiGen {
+
+  override def getValue(sid: Int): Float = {
+    var value = in.getValue(sid) * scaling.getValue(sid)
+
+    value = Math.tanh(value).toFloat
+
     return value
   }
 }

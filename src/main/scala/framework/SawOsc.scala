@@ -1,3 +1,5 @@
+package framework
+
 class SawOsc(var freq: SiGen = new ConstantValue(440), middlePos: SiGen, initialPhase: Float = 0f) extends CachedSiGen {
 
   var phase: Float = initialPhase
@@ -29,6 +31,9 @@ class SawOsc(var freq: SiGen = new ConstantValue(440), middlePos: SiGen, initial
     phase += delta_t
     if (phase > 1) phase -= 1
 
+    if (phase < 0) phase += 1 // to support negative freq (through-zero modulation)
+
+
     if(warpedPosition > 1) warpedPosition -= 1
 
     2 * result - 1
@@ -37,7 +42,7 @@ class SawOsc(var freq: SiGen = new ConstantValue(440), middlePos: SiGen, initial
 }
 
 class SawOscB(var freq: SiGen = new ConstantValue(440), initialPhase: Float = 0f, blep: Boolean = true) extends CachedSiGen {
- 
+
   var phase: Float = initialPhase
 
 

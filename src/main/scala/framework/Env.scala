@@ -1,3 +1,5 @@
+package framework
+
 class LinEnv(var atk: Float, var dec: Float, var sus:Float, var rel: Float, var voiceController: Option[EnvCallbackDestination], var callbackIdentifier: Int) extends CachedSiGen with Env {
 
   var state = 1
@@ -10,7 +12,7 @@ class LinEnv(var atk: Float, var dec: Float, var sus:Float, var rel: Float, var 
 
   var value: Float = 0f
   var sampleRate = 44100
-  val epsilon = 200f //2f // to make sure there no division by zero
+  val epsilon = 20f //2f // to make sure there no division by zero
 
   def calculateNext(sid: Int): Float = {
     state match {
@@ -73,7 +75,7 @@ class ExpEnv(var atk: SiGen, var dec: SiGen, var sus:SiGen, var rel: SiGen, var 
 
   var value: Float = 0f
   var sampleRate = 44100
-  val epsilon = 200f //2f // to make sure there no division by zero
+  val epsilon = 5f // 200f //2f // to make sure there no division by zero
 
   // assuming atk, dec and so on specify the time it takes until the signal is 0.001
   val targetLevel = 0.001f

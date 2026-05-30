@@ -1,3 +1,5 @@
+package framework
+
 class Portamento(inputFreq: SiGen, rate: Float, noiseAmount: Float = 0f) extends CachedSiGen {
 
   var currentValue = inputFreq.getValue(0)

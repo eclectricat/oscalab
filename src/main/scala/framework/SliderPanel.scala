@@ -1,14 +1,14 @@
-import javax.swing._;
-import java.awt.{List => _, _};
-import javax.swing.event._;
-import java.awt.event._;
+package framework
 
 import org.json4s.JsonDSL._
 import org.json4s._
 import org.json4s.native.JsonMethods._
 
-import java.nio.file.{Paths, Files}
+import java.awt.{List => _, _}
 import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
+import javax.swing._
+import javax.swing.event._
 import scala.io.Source
 
 trait SliderPanelElement {

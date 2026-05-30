@@ -1,3 +1,5 @@
+package framework
+
 class PulseOscOld(var freq: Int = 440) extends SiGen {
 
   def getValue(sid: Int): Float = {
