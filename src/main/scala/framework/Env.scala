@@ -141,9 +141,12 @@ trait EnvCallbackDestination {
   def envelopeDone(callbackIdentifier: Int)
 }
 
-trait Env {
+trait Triggerable {
   def release()
   def retrigger()
+}
+
+trait Env extends Triggerable {
   def isDone(): Boolean
   def canBeKilled(): Boolean // if it has no callback (i.e. not relevant for ending the note) => true. otherwise true if IsDone()
 }

@@ -18,7 +18,8 @@ class DrawablePanel {
 
     val dPanel = new DrawingArea(this)
     this.dPanel = Some(dPanel)
-    dPanel.setPreferredSize(new Dimension(800,400))
+    //dPanel.setPreferredSize(new Dimension(800,400))
+    dPanel.setPreferredSize(new Dimension(1600,800))
     dPanel.addMouseListener(new MouseAdapter() {
       override def mousePressed(ev: MouseEvent) = mouseClick(ev)
       override def mouseReleased(ev: MouseEvent) = mouseRelease(ev)
@@ -76,7 +77,7 @@ class WaveDisp(val source: SiGen, val length: Float, eng: Option[SoundEngine]=No
     val calculatedSamples = (0 to numSamples).toList.map{snr:Int => source.getValue(snr + offset)}
 
     System.out.println("number of samples: " + calculatedSamples.size)
-    val maxNum = 800
+    val maxNum = 2400 // 800
     if (calculatedSamples.size > maxNum) {
       val subsampled: List[Tuple2[Float, Float]] = (0 until maxNum).map { i =>
         //val index = i * (calculatedSamples.size/maxNum.toFloat)
