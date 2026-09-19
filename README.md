@@ -31,7 +31,8 @@ In IDEA:
   - select pieces of code, and run them with "Send to Scala REPL" (right-click, or Ctrl-Shift-X)
   - full syntax highlighting and static code checks, autocompletion
 
-[![Oscalab demo](docs/demo.jpg)](docs/ShortDemo.mp4)
+https://github.com/user-attachments/assets/0af36726-2bfc-4bcb-93a0-1321208f4ab0
+
 
 ## Status
 
