@@ -1,0 +1,14 @@
+Music Examples — Copyright Notice
+Copyright © 2026 eclectricat
+
+All musical compositions, musical works, arrangements, and other creative content contained in this directory are All Rights Reserved.
+This includes, but is not limited to:
+musical compositions encoded as Scala source code;
+melodies, harmonies, rhythms, structures, and arrangements;
+generated or rendered audio recordings derived from these compositions;
+accompanying musical material and documentation that is part of the works.
+The source code in this directory is made available for the purpose of demonstrating and experimenting with the Oscalab software. The MIT License applying to the Oscalab software does not grant rights to the musical works contained in this directory.
+You may view, study, and experiment with the source code for your own personal and educational purposes. No permission is granted to reproduce, distribute, publicly perform, publish, commercially exploit, or release the musical works or recordings derived from them without prior written permission from the copyright holder.
+In particular, the musical works may not be released as tracks, recordings, albums, or other musical releases, whether commercially or non-commercially, without permission.
+Copyright in the musical works remains with the copyright holder.
+For permissions beyond those described above, please contact the copyright holder.
