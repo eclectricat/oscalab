@@ -31,7 +31,7 @@ In IDEA:
   - select pieces of code, and run them with "Send to Scala REPL" (right-click, or Ctrl-Shift-X)
   - full syntax highlighting and static code checks, autocompletion
 
-<video src="docs/ShortDemo.mp4" controls></video>
+[![Oscalab demo](docs/demo.jpg)](docs/ShortDemo.mp4)
 
 ## Status
 
