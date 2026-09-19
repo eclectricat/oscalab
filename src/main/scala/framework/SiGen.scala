@@ -51,6 +51,35 @@ class Mixer(var sources: List[SiGen]) extends SiGen {
   }
 }
 
+/**
+ * route output channels of the source to the channels of the mixer/output
+ * channels of the source, typically [0], or [0,1] for mono/stereo sources
+ * chanels of the destination, between 0 and 8
+ * @param source
+ * @param shift
+ */
+class ChannelShifter(var source: SiGen, sourceChannels: List[Int], destinationChannels: List[Int]) extends SiGen {
+
+  if (sourceChannels.length != destinationChannels.length) {
+    System.out.println("CHANNELS DON'T MATCH")
+  }
+
+  def getValue(sid:Int): Float = { //System.out.println(sources)
+    return getValue(sid,0)
+  }
+
+  override def getValue(sid:Int, channel:Int): Float = {
+    val destIndex = destinationChannels.indexOf(channel)
+
+    if (destIndex >=0) {
+      source.getValue(sid, sourceChannels(destIndex))
+    } else {
+      0f
+    }
+
+  }
+}
+
 class VCA(var in: SiGen, var vol: SiGen) extends SiGen {
   def getValue(sid:Int): Float =
     vol.getValue(sid) * in.getValue(sid)

@@ -97,3 +97,53 @@ class SoundEngine(var source: SiGen) extends LineListener {
   }
 
 }
+
+class SoundEngine16(var source2: SiGen) extends SoundEngine(source2) {
+
+  override def run() {
+
+    val bufferSize = 2048 * 16
+    val format = new AudioFormat(44100.0f, 16, 16, true, true)
+
+    val dataLineInfo:DataLine.Info  = new DataLine.Info(classOf[SourceDataLine], format);
+    var sourceDataLine = AudioSystem.getLine(dataLineInfo).asInstanceOf[SourceDataLine];
+    sourceDataLine.open(format, bufferSize);
+    sourceDataLine.addLineListener(this)
+    sourceDataLine.start();
+
+    System.out.println("sourceDataLine buffer size:" + sourceDataLine.getBufferSize())
+    Thread.currentThread().setPriority(Thread.MAX_PRIORITY)
+    System.out.println("prio " + Thread.currentThread().getPriority() )
+    System.out.println("Initial available samples in buffer: " + sourceDataLine.available)
+
+    val internalBufferSize = 512 * 16
+    val tempBuffer = new Array[Byte](internalBufferSize)
+
+    sourceDataLine.write(tempBuffer, 0, internalBufferSize);
+
+    while(running) {
+      // each frame = 2 bytes per channel * 16 channels = 32 bytes
+      for (i <- 0 until internalBufferSize / (2 * 16) ) {
+
+        val scaledSamples = Array.tabulate(16) { channel =>
+          val sample = 0.1f * source2.getValue(sidCounter, channel)
+          min(max((sample * 32768), -32768), 32767).toInt
+        }
+
+        sidCounter += 1
+
+        var offset = i * 32
+        for (sample <- scaledSamples) {
+          tempBuffer(offset) = (sample >> 8).toByte
+          tempBuffer(offset + 1) = sample.toByte
+          offset += 2
+        }
+      }
+
+      sourceDataLine.write(tempBuffer, 0, internalBufferSize)
+    }
+
+    sourceDataLine.drain();
+    sourceDataLine.close();
+  }
+}

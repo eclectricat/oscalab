@@ -1,12 +1,9 @@
-package live
+
 
 import framework._
 import framework.MyImplicits._
 import framework.LiveImplicits._
 
-
-
-object Live {
   // initialise setup
   val mixer = new Mixer(List())
   val eng = new SoundEngine(mixer)
@@ -126,7 +123,6 @@ object Live {
   s.mute(2)
   s.mute(3)
 
-
   s.start()
   //s.stop()
 
@@ -134,4 +130,5 @@ object Live {
     new ParameterSliderAdapter(sound.prob_),
     new ParameterSliderAdapter(sound.cutoff),
     new ParameterSliderAdapter(sound.reso))).show()
-}
+
+

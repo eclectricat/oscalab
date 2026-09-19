@@ -2,6 +2,7 @@ package live
 
 import framework._
 import framework.MyImplicits._
+import framework.LiveImplicits._
 
 
 
@@ -16,26 +17,26 @@ object LiveBeat {
 
   val snare = new SoundSource() {
 
-    val dec = new ConstantValue(1f)
-    val pitch = new ConstantValue(1f)
+    val dec:Parameter = new ConstantValue(1f)
+    val pitch:Parameter = new ConstantValue(1f)
 
-    val env1 = new ExpEnv(0f, 0.05f * dec, 0f, 0f, None, 0)
-    val env2 = new ExpEnv(0f, 0.2f * dec , 0f, 0f, None, 0)
-    val env3 = new ExpEnv(0f, 0.1f * dec , 0f, 0f, None, 0)
-    val env4 = new ExpEnv(0f, 0.1f * dec , 0f, 0f, None, 0)
-    val o1 = new SinOsc(140f * pitch + env1 * 150f, 1.5f) * env2 * 1f
-    val o2 = new SinOsc(240f * pitch + env3 * 150f, 1.5f) * env4 * 1f
+    val env1 = new ExpEnv(0f, dec * 0.05f, 0f, 0f, None, 0)
+    val env2 = new ExpEnv(0f, dec * 0.2f, 0f, 0f, None, 0)
+    val env3 = new ExpEnv(0f, dec * 0.1f, 0f, 0f, None, 0)
+    val env4 = new ExpEnv(0f, dec * 0.1f, 0f, 0f, None, 0)
+    val o1 = new SinOsc(pitch * 140f   + env1 * 150f, 1.5f) * env2 * 1f
+    val o2 = new SinOsc(pitch * 240f + env3 * 150f, 1.5f) * env4 * 1f
 
     val tonal = new WaveShaper(0.0f + (o1 + o2), 5f)
 
     val noiseLP = new Digital2Pole(new NoiseOsc(), 0.8f, 0f)
     val noiseBP = new Digital2PoleHP(noiseLP, 0.5f, 0f)
 
-    val env5 = new ExpEnv(0.001f, 0.1f* dec, 0f, 0f, None, 0)
-    val env6 = new ExpEnv(0.001f, 0.3f* dec, 0f, 0f, None, 0)
+    val env5 = new ExpEnv(0.001f, dec * 0.1f, 0f, 0f, None, 0)
+    val env6 = new ExpEnv(0.001f, dec * 0.3f, 0f, 0f, None, 0)
     val noise = 0.5f * noiseLP * env5 + 1f * noiseBP * env6
 
-    val vol = new ConstantValue(1f)
+    val vol:Parameter = new ConstantValue(1f)
 
     val stut = new Stutter((0.5f * tonal + 5f * noise)* vol, 0, 1, 0, 0, 150)
 
@@ -76,9 +77,9 @@ object LiveBeat {
 
   s.set(1,
     kick.p(List(1, 0, 1, 0, 0, 0, 0, 0)++ List(0,0,0,0,0,0,0,0) ++ List(1, 1, 0, 0, 0, 0, 1, 0)++ List(0,0,0,0,0,0,0,0))
-      .mod(kick.vol -> (List(1, 0.2f) ++ List(0.7f,0.85f,1)))
-      .mod(kick.odf -> (List(1, 3f) ++ List(3f,1,1)))
-      .mod(kick.dec -> (List(1, 7f) ++ List(1f,4,1)))
+      .mod(kick.vol -> (Locks(1, 0.2f) ++ Locks(0.7f,0.85f,1)))
+      .mod(kick.odf -> (Locks(1, 3f) ++ Locks(3f,1,1)))
+      .mod(kick.dec -> (Locks(1, 7f) ++ Locks(1f,4,1)))
       .modMaybe(kick.stut.enable -> List(0,1f,0,0,0f))
 
   )
@@ -89,22 +90,24 @@ object LiveBeat {
       .mod(snare.vol -> List(1, 0.3f, 0.2f, 0.2f ))
       .mod(snare.pitch -> List(1, 2f, 1.8f, 1f))
       .modMaybe(snare.stut.enable -> List(0f,0,0,1))
-      .modMaybe(snare.stut.loopEnd -> List.fill(4 * 3)(0.1f).updated(3, 1f).updated(7, 0.2f))
+      .modMaybe(snare.stut.loopEnd -> List.fill(4 * 3)(0.1f).updated(3, 1f).updated(7, 0.2f).map(FloatLock(_)))
   )
 
   s.set(3,
-    hh.p(List(1,0,1,1,   0,0,0,0,  1,1,0,1, 0,0,1,1,  0)).mod(hh.dec -> List(0.5f, 0.4f, 1f, 0.5f, 2.5f, 1f, 1f))
+    hh.p(List(1,0,1,1,   0,0,0,0,  1,1,0,1, 0,0,1,1,  0))
+      .mod(hh.dec -> Locks(0.5f, 0.4f, 1f, 0.5f, 2.5f, 1f, 1f))
       .modMaybe(hh.stut.enable -> List(0, 1, 0f, 0f, 0f, 1f))
       .modMaybe(hh.stut.loopEnd -> List(0.5f, 0.2f, 0.75f))
-      .mod(hh.cut -> List(0.6f, 0.4f, 0.8f, 0.7f, 0.5f))
+      .mod(hh.cut -> Locks(0.6f, 0.4f, 0.8f, 0.7f, 0.5f))
 
   )
 
   s.set(3,
-    hh.p(List(1,0,1,1,   0,0,0,0,  1,0,0,0, 0,0,1,1,  0)).mod(hh.dec -> List(0.5f, 0.4f, 1f, 0.5f, 2.5f, 1f, 1f))
+    hh.p(List(1,0,1,1,   0,0,0,0,  1,0,0,0, 0,0,1,1,  0))
+      .mod(hh.dec -> Locks(0.5f, 0.4f, 1f, 0.5f, 2.5f, 1f, 1f))
       .modMaybe(hh.stut.enable -> List(0, 1, 0f, 0f, 0f, 1f, 0f))
       .modMaybe(hh.stut.loopEnd -> List(0.5f, 0.2f, 0.75f))
-      .mod(hh.cut -> List(0.6f, 0.4f, 0.8f, 0.7f, 0.5f))
+      .mod(hh.cut -> Locks(0.6f, 0.4f, 0.8f, 0.7f, 0.5f))
 
   )
 

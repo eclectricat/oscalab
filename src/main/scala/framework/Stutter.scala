@@ -1,6 +1,6 @@
 package framework
 
-class Stutter(in: SiGen, val loopStart:SiGen, val loopEnd:SiGen, val enable:SiGen, val move:SiGen, bpm: SiGen) extends SiGen with Triggerable {
+class Stutter(in: SiGen, val loopStart:SiGen, val loopEnd:SiGen, val enable:SiGen, val move:SiGen, bpm: SiGen) extends CachedSiGen with Triggerable {
 
   val bufferLength = 10240
   val samples = new Array[Float](bufferLength)
@@ -12,7 +12,7 @@ class Stutter(in: SiGen, val loopStart:SiGen, val loopEnd:SiGen, val enable:SiGe
   var direction:Int= 1;
 
 
-  override def getValue(sid: Int): Float  =  {
+  override def calculateNext(sid: Int): Float  =  {
     val inVal = in.getValue(sid)
 
     if (enable.getValue(sid) < 0.5f) {

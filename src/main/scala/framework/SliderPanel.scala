@@ -45,6 +45,35 @@ class ParamInfo(val name:String, val min:Float, val max:Float, val value:Constan
 
 }
 
+// For the live coding parameters
+class ParameterSliderAdapter(val parameter: Parameter) extends SliderPanelElement {
+
+  var slider:Option[JSlider] = None
+
+  def draw(panel: JPanel) = {
+    val sliderLabel = new JLabel(parameter.name, SwingConstants.CENTER)
+    sliderLabel.setAlignmentX(Component.CENTER_ALIGNMENT)
+
+    val scaledValue = 100 * (parameter.signal.value - parameter.min) / (parameter.max-parameter.min)
+    val sl = new JSlider(SwingConstants.HORIZONTAL,0, 100, scaledValue.round)
+    slider = Some(sl)
+
+    panel.add(sliderLabel)
+    panel.add(sl)
+
+    sl.addChangeListener(new SliderChangeListener2(this.parameter))
+  }
+
+  override def jsonRepr: Option[(String, org.json4s.JDouble)] = Some((parameter.name, JDouble(parameter.signal.value)))
+  override def set(newValue: Float) = {
+    parameter.signal.value = newValue
+
+    val intValue = (100 * (parameter.signal.value - parameter.min) / (parameter.max-parameter.min))
+    slider.map(_.setValue(intValue.round))
+  }
+
+}
+
 class PanelDividerUI(val text:String) extends SliderPanelElement {
   def draw(panel: JPanel) = {
     val fulltext = "<html><p style=\"padding: 5px; border: 1px solid black;\">" + text + "</p></html>"
@@ -60,8 +89,23 @@ class SliderChangeListener(param: ParamInfo) extends ChangeListener {
     val realValue = (sliderValue / 100.0) * (param.max-param.min) + param.min
 
     param.value.value = realValue.toFloat
+    //param.set(realValue.toFloat)
+
     System.out.println("Value changed, slider:" +sliderValue)
     System.out.println("Value changed, param :" +param.value.value)
+  }
+}
+
+class SliderChangeListener2(param: Parameter) extends ChangeListener {
+  def stateChanged(event: ChangeEvent) = {
+    val sliderValue = event.getSource().asInstanceOf[JSlider].getValue
+    val realValue = (sliderValue / 100.0) * (param.max-param.min) + param.min
+
+    param.signal.value = realValue.toFloat
+    //param.set(realValue.toFloat)
+
+    System.out.println("Value changed, slider:" +sliderValue)
+    System.out.println("Value changed, param :" +param.signal.value)
   }
 }
 
