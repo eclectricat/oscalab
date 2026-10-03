@@ -1,0 +1,17 @@
+NOTICE — Licensing scope
+
+This repository is licensed under the ScalaSynth No-AI License v1.0 (see
+LICENSE).
+
+The musical compositions, arrangements, and other creative content in
+src/main/scala/live/ are All Rights Reserved and are not covered by the
+repository license; see src/main/scala/live/LICENSE.txt. This also applies
+to rendered or recorded audio derived from those compositions.
+
+The following third-party components are governed by their own licenses and
+are not covered by this repository's license:
+
+- Scala standard library, sbt, and build-tool plugins
+- json4s (library dependency)
+- JCoreAudio (lib/JCoreAudio.jar, lib/libJCoreAudio.jnilib)
+- FrogDisco (lib/FrogDisco.jar, lib/libFrogDisco.dylib)
